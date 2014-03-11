@@ -1,0 +1,49 @@
+                               SPOTIFY PROJECT
+                              -----------------
+
+
+Copyright (c) 2010 Spotify AB
+
+THIS REPOSITORY IS THE PROPERTY OF SPOTIFY AB
+UNAUTHORIZED ACCESS TO THIS DATA IS STRICTLY PROHIBITED.
+
+README Template Version 5
+
+
+Project     : java/dns
+
+Maintainer  : Tools Squad <tools@spotify.com>
+
+Dependencies:
+
+Environment :
+
+Categories  : [x]  Infrastructure
+              [ ]  Database Maintenance
+              [ ]  Shared Library
+              [ ]  Media Data Processing
+              [ ]  Meta Data Processing
+              [ ]  Deep Server
+              [ ]  Shallow Server
+              [ ]  Client
+
+
+USAGE
+------
+
+DNS SRV record lookup.
+
+DESCRIPTION
+------------
+
+BUILD
+------
+
+mvn compile
+
+INSTALLATION
+-------------
+
+# Installation to your local maven repository:
+
+  mvn install
