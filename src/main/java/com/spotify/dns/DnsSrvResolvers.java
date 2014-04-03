@@ -16,16 +16,14 @@
 
 package com.spotify.dns;
 
-import com.spotify.statistics.MuninGraphCategoryConfig;
 import com.yammer.metrics.Metrics;
 import com.yammer.metrics.core.MetricName;
+
 import org.xbill.DNS.Lookup;
 
 import java.util.concurrent.TimeUnit;
 
 import static com.google.common.primitives.Ints.checkedCast;
-import static com.spotify.statistics.Property.CounterProperty;
-import static com.spotify.statistics.Property.TimerProperty;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
@@ -41,23 +39,6 @@ public final class DnsSrvResolvers {
 
   public static DnsSrvResolverBuilder newBuilder() {
     return new DnsSrvResolverBuilder(false, false, false, SECONDS.toMillis(DEFAULT_DNS_TIMEOUT_SECONDS));
-  }
-
-  public static void configureMuninGraphs(MuninGraphCategoryConfig category) {
-    category.graph("DNS Lookups")
-        .muninName("dns_lookups")
-        .vlabel("r/s")
-        .dataSource(TIMER_NAME, "total", TimerProperty.COUNT)
-        .dataSource(TIMER_NAME, "5 min rate", TimerProperty.FIVE_MINUTE_RATE)
-        .dataSource(FAILURES_NAME, "failure", CounterProperty.COUNT)
-        .dataSource(EMPTY_RESULTS_NAME, "empty", CounterProperty.COUNT);
-
-    category.graph("DNS lookup durations")
-        .muninName("dns_lookup_durations")
-        .dataSource(TIMER_NAME, "50%", TimerProperty.MEAN)
-        .dataSource(TIMER_NAME, "95%", TimerProperty.PERCENTILE95)
-        .dataSource(TIMER_NAME, "99%", TimerProperty.PERCENTILE99)
-        .dataSource(TIMER_NAME, "stddev", TimerProperty.STD_DEV);
   }
 
   public static final class DnsSrvResolverBuilder {
