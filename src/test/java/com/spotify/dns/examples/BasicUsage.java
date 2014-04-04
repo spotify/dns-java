@@ -17,12 +17,10 @@
 package com.spotify.dns.examples;
 
 import com.google.common.net.HostAndPort;
-import com.spotify.dns.DnsSrvResolver;
+
 import com.spotify.dns.DnsException;
+import com.spotify.dns.DnsSrvResolver;
 import com.spotify.dns.DnsSrvResolvers;
-import com.spotify.statistics.MuninReporter;
-import com.spotify.statistics.MuninReporterConfig;
-import com.yammer.metrics.Metrics;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -38,13 +36,6 @@ public class BasicUsage {
         .metered(true)
         .dnsLookupTimeoutMillis(1000)
         .build();
-
-    MuninReporterConfig reporterConfig = new MuninReporterConfig();
-
-    DnsSrvResolvers.configureMuninGraphs(reporterConfig.category("dns"));
-
-    MuninReporter reporter = new MuninReporter(Metrics.defaultRegistry(), reporterConfig);
-    reporter.start();
 
     boolean quit = false;
     BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
