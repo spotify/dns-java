@@ -30,7 +30,42 @@ import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 public class BasicUsage {
-  private static DnsReporter REPORTER = new DnsReporter() {
+
+  private static DnsReporter REPORTER = new StdoutReporter();
+
+  public static void main(String[] args) throws ExecutionException, InterruptedException, IOException {
+    DnsSrvResolver resolver = DnsSrvResolvers.newBuilder()
+        .cachingLookups(true)
+        .retainingDataOnFailures(true)
+        .metered(REPORTER)
+        .dnsLookupTimeoutMillis(1000)
+        .build();
+
+    boolean quit = false;
+    BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
+
+    while (!quit) {
+      System.out.print("Enter a SRV name: ");
+      String line = in.readLine();
+
+      if (line == null || line.isEmpty()) {
+        quit = true;
+      } else {
+        try {
+          List<HostAndPort> nodes = resolver.resolve(line);
+
+          for (HostAndPort node : nodes) {
+            System.out.println(node);
+          }
+        }
+        catch (DnsException e) {
+          e.printStackTrace(System.out);
+        }
+      }
+    }
+  }
+
+  public static class StdoutReporter implements DnsReporter {
     @Override
     public DnsTimingContext resolveTimer() {
       return new DnsTimingContext() {
@@ -54,38 +89,6 @@ public class BasicUsage {
     @Override
     public void reportEmpty() {
       System.out.println("Empty response from server.");
-    }
-  };
-
-  public static void main(String[] args) throws ExecutionException, InterruptedException, IOException {
-    DnsSrvResolver resolver = DnsSrvResolvers.newBuilder()
-        .cachingLookups(true)
-        .retainingDataOnFailures(true)
-        .metered(REPORTER)
-        .dnsLookupTimeoutMillis(1000)
-        .build();
-
-    boolean quit = false;
-    BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
-
-    while (!quit) {
-      System.out.print("Enter a SRV name: ");
-      String line = in.readLine();
-
-      if (line == null) {
-        quit = true;
-      } else {
-        try {
-          List<HostAndPort> nodes = resolver.resolve(line);
-
-          for (HostAndPort node : nodes) {
-            System.out.println(node);
-          }
-        }
-        catch (DnsException e) {
-          e.printStackTrace(System.out);
-        }
-      }
     }
   }
 }
