@@ -16,52 +16,48 @@
 
 package com.spotify.dns;
 
-import com.google.common.net.HostAndPort;
-import com.yammer.metrics.core.Counter;
-import com.yammer.metrics.core.Timer;
-import com.yammer.metrics.core.TimerContext;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.util.List;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import com.google.common.net.HostAndPort;
+import com.spotify.dns.statistics.DnsReporter;
+import com.spotify.dns.statistics.DnsTimingContext;
 
 /**
  * Tracks metrics for DnsSrvResolver calls.
  */
 class MeteredDnsSrvResolver implements DnsSrvResolver {
   private final DnsSrvResolver delegate;
-  private final Timer timer;
-  private final Counter failureCounter;
-  private final Counter emptyCounter;
+  private final DnsReporter reporter;
 
-  MeteredDnsSrvResolver(DnsSrvResolver delegate, Timer timer, Counter failureCounter, Counter emptyCounter) {
+  MeteredDnsSrvResolver(DnsSrvResolver delegate, DnsReporter reporter) {
     this.delegate = checkNotNull(delegate, "delegate");
-    this.timer = checkNotNull(timer, "timer");
-    this.failureCounter = checkNotNull(failureCounter, "failureCounter");
-    this.emptyCounter = checkNotNull(emptyCounter, "emptyCounter");
+    this.reporter = checkNotNull(reporter, "reporter");
   }
 
   @Override
   public List<HostAndPort> resolve(String fqdn) {
-    // using a boolean to track whether or not an exception was thrown - that means I don't
-    // need to worry about how to rethrow the exception; instead, I can take whatever action I
-    // want in the finally clause.
-    boolean success = false;
-    final TimerContext context = timer.time();
+    // Only catch and report RuntimeException to avoid Error's since that would
+    // most likely only aggravate any condition that causes them to be thrown.
+
+    final DnsTimingContext resolveTimer = reporter.resolveTimer();
+
+    final List<HostAndPort> result;
 
     try {
-      List<HostAndPort> result = delegate.resolve(fqdn);
-      if (result.isEmpty()) {
-        emptyCounter.inc();
-      }
-      success = true;
-      return result;
+      result = delegate.resolve(fqdn);
+    } catch (RuntimeException error) {
+      reporter.reportFailure(error);
+      throw error;
+    } finally {
+      resolveTimer.stop();
     }
-    finally {
-      context.stop();
-      if (!success) {
-        failureCounter.inc();
-      }
+
+    if (result.isEmpty()) {
+      reporter.reportEmpty();
     }
+
+    return result;
   }
 }

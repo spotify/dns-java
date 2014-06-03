@@ -17,16 +17,6 @@
 package com.spotify.dns;
 
 import com.google.common.testing.AbstractPackageSanityTests;
-import com.yammer.metrics.Metrics;
-import com.yammer.metrics.core.Counter;
-import com.yammer.metrics.core.Timer;
 
 public class PackageSanityTest extends AbstractPackageSanityTests {
-  @Override
-  public void setUp() throws Exception {
-    setDefault(Timer.class, Metrics.newTimer(PackageSanityTest.class, "dummyTimer"));
-    setDefault(Counter.class, Metrics.newCounter(PackageSanityTest.class, "dummyCounter"));
-
-    super.setUp();
-  }
 }
