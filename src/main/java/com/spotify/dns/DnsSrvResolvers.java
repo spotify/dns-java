@@ -16,44 +16,36 @@
 
 package com.spotify.dns;
 
-import com.yammer.metrics.Metrics;
-import com.yammer.metrics.core.MetricName;
-
-import org.xbill.DNS.Lookup;
-
-import java.util.concurrent.TimeUnit;
-
 import static com.google.common.primitives.Ints.checkedCast;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
+
+import org.xbill.DNS.Lookup;
+
+import com.spotify.dns.statistics.DnsReporter;
 
 /**
  * Provides utility methods for instantiating and working with DnsSrvResolvers.
  */
 public final class DnsSrvResolvers {
-  public static final MetricName TIMER_NAME = new MetricName(DnsSrvResolver.class, "lookups");
-  public static final MetricName FAILURES_NAME = new MetricName(DnsSrvResolver.class, "failures");
-  public static final MetricName EMPTY_RESULTS_NAME = new MetricName(DnsSrvResolver.class, "emptyResults");
-
   private static final int DEFAULT_DNS_TIMEOUT_SECONDS = 5;
 
   public static DnsSrvResolverBuilder newBuilder() {
-    return new DnsSrvResolverBuilder(false, false, false, SECONDS.toMillis(DEFAULT_DNS_TIMEOUT_SECONDS));
+    return new DnsSrvResolverBuilder(null, false, false, SECONDS.toMillis(DEFAULT_DNS_TIMEOUT_SECONDS));
   }
 
   public static final class DnsSrvResolverBuilder {
-    private final boolean metered;
+    private final DnsReporter reporter;
     private final boolean retainData;
     private final boolean cacheLookups;
     private final long dnsLookupTimeoutMillis;
 
     private DnsSrvResolverBuilder(
-        boolean metered,
+        DnsReporter reporter,
         boolean retainData,
         boolean cacheLookups,
         long dnsLookupTimeoutMillis) {
-
-      this.metered = metered;
+      this.reporter = reporter;
       this.retainData = retainData;
       this.cacheLookups = cacheLookups;
       this.dnsLookupTimeoutMillis = dnsLookupTimeoutMillis;
@@ -77,13 +69,8 @@ public final class DnsSrvResolvers {
 
       DnsSrvResolver result = new XBillDnsSrvResolver(lookupFactory);
 
-      if (metered) {
-        result = new MeteredDnsSrvResolver(
-            result,
-            Metrics.newTimer(TIMER_NAME, TimeUnit.MILLISECONDS, TimeUnit.SECONDS),
-            Metrics.newCounter(FAILURES_NAME),
-            Metrics.newCounter(EMPTY_RESULTS_NAME)
-        );
+      if (reporter != null) {
+        result = new MeteredDnsSrvResolver(result, reporter);
       }
 
       if (retainData) {
@@ -93,20 +80,20 @@ public final class DnsSrvResolvers {
       return result;
     }
 
-    public DnsSrvResolverBuilder metered(boolean metered) {
-      return new DnsSrvResolverBuilder(metered, retainData, cacheLookups, dnsLookupTimeoutMillis);
+    public DnsSrvResolverBuilder metered(DnsReporter reporter) {
+      return new DnsSrvResolverBuilder(reporter, retainData, cacheLookups, dnsLookupTimeoutMillis);
     }
 
     public DnsSrvResolverBuilder retainingDataOnFailures(boolean retainData) {
-      return new DnsSrvResolverBuilder(metered, retainData, cacheLookups, dnsLookupTimeoutMillis);
+      return new DnsSrvResolverBuilder(reporter, retainData, cacheLookups, dnsLookupTimeoutMillis);
     }
 
     public DnsSrvResolverBuilder cachingLookups(boolean cacheLookups) {
-      return new DnsSrvResolverBuilder(metered, retainData, cacheLookups, dnsLookupTimeoutMillis);
+      return new DnsSrvResolverBuilder(reporter, retainData, cacheLookups, dnsLookupTimeoutMillis);
     }
 
     public DnsSrvResolverBuilder dnsLookupTimeoutMillis(long dnsLookupTimeoutMillis) {
-      return new DnsSrvResolverBuilder(metered, retainData, cacheLookups, dnsLookupTimeoutMillis);
+      return new DnsSrvResolverBuilder(reporter, retainData, cacheLookups, dnsLookupTimeoutMillis);
     }
   }
 

@@ -16,105 +16,109 @@
 
 package com.spotify.dns;
 
-import com.google.common.net.HostAndPort;
-import com.yammer.metrics.core.Counter;
-import com.yammer.metrics.core.Timer;
-import com.yammer.metrics.core.TimerContext;
-import org.junit.Before;
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import java.util.List;
 
-import static com.spotify.dns.DnsTestUtil.nodes;
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.junit.Assert.assertThat;
-import static org.mockito.Mockito.*;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
+import com.google.common.net.HostAndPort;
+import com.spotify.dns.statistics.DnsReporter;
+import com.spotify.dns.statistics.DnsTimingContext;
 
 public class MeteredDnsSrvResolverTest {
-  public static final String FQDN = "nånting";
-  MeteredDnsSrvResolver resolver;
+  private static final String FQDN = "nånting";
+  private static final RuntimeException RUNTIME_EXCEPTION = new RuntimeException();
+  private static final Error ERROR = new Error();
 
-  DnsSrvResolver delegate;
-  Timer timer;
-  Counter failureCounter;
-  Counter emptyCounter;
+  @SuppressWarnings("unchecked")
+  private static final List<HostAndPort> EMPTY = mock(List.class);
+  @SuppressWarnings("unchecked")
+  private static final List<HostAndPort> NOT_EMPTY = mock(List.class);
 
-  TimerContext context;
-  List<HostAndPort> nodes;
+  static {
+    when(EMPTY.isEmpty()).thenReturn(true);
+    when(NOT_EMPTY.isEmpty()).thenReturn(false);
+  }
+
+  private DnsSrvResolver delegate;
+  private DnsReporter reporter;
+  private DnsTimingContext timingReporter;
+
+  private DnsSrvResolver resolver;
 
   @Before
-  public void setUp() throws Exception {
+  public void before() {
     delegate = mock(DnsSrvResolver.class);
-    timer = mock(Timer.class);
-    failureCounter = mock(Counter.class);
-    emptyCounter = mock(Counter.class);
+    reporter = mock(DnsReporter.class);
+    timingReporter = mock(DnsTimingContext.class);
 
-    resolver = new MeteredDnsSrvResolver(delegate, timer, failureCounter, emptyCounter);
+    resolver = new MeteredDnsSrvResolver(delegate, reporter);
 
-    context = mock(TimerContext.class);
-    when(timer.time()).thenReturn(context).thenThrow(new RuntimeException("didn't expect two calls"));
+    when(reporter.resolveTimer()).thenReturn(timingReporter);
+  }
 
-    nodes = nodes("node1", "node2", "nodtre");
+  @After
+  public void after() {
+    // XXX: would be really strange if this was not called under the current circumstances.
+    verify(reporter).resolveTimer();
+    verify(timingReporter).stop();
   }
 
   @Test
-  public void shouldReturnResultsFromDelegate() throws Exception {
-    when(delegate.resolve(FQDN)).thenReturn(nodes);
-    assertThat(resolver.resolve(FQDN), equalTo(nodes));
-  }
-
-  @Test
-  public void shouldTimeCalls() throws Exception {
-    when(delegate.resolve(FQDN)).thenReturn(nodes);
+  public void shouldCountSuccessful() throws Exception {
+    when(delegate.resolve(FQDN)).thenReturn(NOT_EMPTY);
 
     resolver.resolve(FQDN);
 
-    verify(context).stop();
+    verify(reporter, never()).reportEmpty();
+    verify(reporter, never()).reportFailure(RUNTIME_EXCEPTION);
   }
 
   @Test
-  public void shouldTimeFailedCalls() throws Exception {
-    DnsException expected = new DnsException("expected");
-    when(delegate.resolve(FQDN)).thenThrow(expected);
+  public void shouldReportEmpty() throws Exception {
+    when(delegate.resolve(FQDN)).thenReturn(EMPTY);
+
+    resolver.resolve(FQDN);
+
+    verify(reporter).reportEmpty();
+    verify(reporter, never()).reportFailure(RUNTIME_EXCEPTION);
+  }
+
+  @Test
+  public void shouldReportRuntimeException() throws Exception {
+    when(delegate.resolve(FQDN)).thenThrow(RUNTIME_EXCEPTION);
 
     try {
       resolver.resolve(FQDN);
-    } catch (DnsException e) {
-      assertThat(e, equalTo(expected));
+      fail("resolve should have thrown exception");
+    } catch(RuntimeException e) {
+      assertEquals(RUNTIME_EXCEPTION, e);
     }
 
-    verify(context).stop();
+    verify(reporter, never()).reportEmpty();
+    verify(reporter).reportFailure(RUNTIME_EXCEPTION);
   }
 
   @Test
-  public void shouldCountErrors() throws Exception {
-    DnsException expected = new DnsException("expected");
-    when(delegate.resolve(FQDN)).thenThrow(expected);
+  public void shouldNotReportError() throws Exception {
+    when(delegate.resolve(FQDN)).thenThrow(ERROR);
 
     try {
       resolver.resolve(FQDN);
-    } catch (DnsException e) {
-      assertThat(e, equalTo(expected));
+      fail("resolve should have thrown exception");
+    } catch(Error e) {
+      assertEquals(ERROR, e);
     }
 
-    verify(failureCounter).inc();
-  }
-
-  @Test
-  public void shouldNotCountSuccesses() throws Exception {
-    when(delegate.resolve(FQDN)).thenReturn(nodes);
-
-    resolver.resolve(FQDN);
-
-    verifyZeroInteractions(emptyCounter, failureCounter);
-  }
-
-  @Test
-  public void shouldCountEmptyResults() throws Exception {
-    when(delegate.resolve(FQDN)).thenReturn(nodes());
-
-    resolver.resolve(FQDN);
-
-    verify(emptyCounter).inc();
+    verify(reporter, never()).reportEmpty();
+    verify(reporter, never()).reportFailure(RUNTIME_EXCEPTION);
   }
 }

@@ -14,9 +14,11 @@
  * limitations under the License.
  */
 
-package com.spotify.dns;
+package com.spotify.dns.statistics;
 
-import com.google.common.testing.AbstractPackageSanityTests;
-
-public class PackageSanityTest extends AbstractPackageSanityTests {
+/**
+ * Implement to handle timings when performing dns requests.
+ */
+public interface DnsTimingContext {
+  void stop();
 }

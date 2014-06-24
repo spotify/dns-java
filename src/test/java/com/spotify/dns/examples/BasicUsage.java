@@ -17,10 +17,11 @@
 package com.spotify.dns.examples;
 
 import com.google.common.net.HostAndPort;
-
 import com.spotify.dns.DnsException;
 import com.spotify.dns.DnsSrvResolver;
 import com.spotify.dns.DnsSrvResolvers;
+import com.spotify.dns.statistics.DnsReporter;
+import com.spotify.dns.statistics.DnsTimingContext;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -29,11 +30,14 @@ import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 public class BasicUsage {
+
+  private static DnsReporter REPORTER = new StdoutReporter();
+
   public static void main(String[] args) throws ExecutionException, InterruptedException, IOException {
     DnsSrvResolver resolver = DnsSrvResolvers.newBuilder()
         .cachingLookups(true)
         .retainingDataOnFailures(true)
-        .metered(true)
+        .metered(REPORTER)
         .dnsLookupTimeoutMillis(1000)
         .build();
 
@@ -44,7 +48,7 @@ public class BasicUsage {
       System.out.print("Enter a SRV name: ");
       String line = in.readLine();
 
-      if (line == null) {
+      if (line == null || line.isEmpty()) {
         quit = true;
       } else {
         try {
@@ -58,6 +62,33 @@ public class BasicUsage {
           e.printStackTrace(System.out);
         }
       }
+    }
+  }
+
+  public static class StdoutReporter implements DnsReporter {
+    @Override
+    public DnsTimingContext resolveTimer() {
+      return new DnsTimingContext() {
+        private final long start = System.currentTimeMillis();
+
+        @Override
+        public void stop() {
+          final long now = System.currentTimeMillis();
+          final long diff = now - start;
+          System.out.println("Request took " + diff + "ms");
+        }
+      };
+    }
+
+    @Override
+    public void reportFailure(Throwable error) {
+      System.err.println("Error when resolving: " + error);
+      error.printStackTrace(System.err);
+    }
+
+    @Override
+    public void reportEmpty() {
+      System.out.println("Empty response from server.");
     }
   }
 }

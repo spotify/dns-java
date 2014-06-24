@@ -16,17 +16,21 @@
 
 package com.spotify.dns;
 
-import com.yammer.metrics.Metrics;
-import com.yammer.metrics.core.MetricName;
-import com.yammer.metrics.core.MetricsRegistry;
-import com.yammer.metrics.core.Timer;
-import org.junit.After;
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.nullValue;
+import static org.junit.Assert.assertThat;
+import static org.mockito.Matchers.isA;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 import org.junit.Before;
 import org.junit.Test;
 
-import static org.hamcrest.CoreMatchers.*;
-import static org.hamcrest.Matchers.greaterThan;
-import static org.junit.Assert.assertThat;
+import com.spotify.dns.statistics.DnsReporter;
+import com.spotify.dns.statistics.DnsTimingContext;
 
 /**
  * Integration tests for the DnsSrvResolversIT class.
@@ -40,11 +44,6 @@ public class DnsSrvResolversIT {
     resolver = DnsSrvResolvers.newBuilder().build();
   }
 
-  @After
-  public void tearDown() throws Exception {
-    Metrics.defaultRegistry().removeMetric(DnsSrvResolver.class, "lookups");
-  }
-
   @Test
   public void shouldReturnResultsForValidQuery() throws Exception {
     assertThat(resolver.resolve("_spotify-client._tcp.sto.spotify.net").isEmpty(), is(false));
@@ -52,28 +51,18 @@ public class DnsSrvResolversIT {
 
   @Test
   public void shouldTrackMetricsWhenToldTo() throws Exception {
+    final DnsReporter reporter = mock(DnsReporter.class);
+    final DnsTimingContext timingReporter = mock(DnsTimingContext.class);
+
     resolver = DnsSrvResolvers.newBuilder()
-        .metered(true)
+        .metered(reporter)
         .build();
 
-    MetricsRegistry registry = Metrics.defaultRegistry();
-    Timer timer = (Timer) registry.allMetrics().get(new MetricName(DnsSrvResolver.class, "lookups"));
-
-    long countBefore = timer.count();
-
+    when(reporter.resolveTimer()).thenReturn(timingReporter);
     resolver.resolve("_spotify-client._tcp.sto.spotify.net");
-
-    assertThat(timer.count(), greaterThan(countBefore));
-  }
-
-  @Test
-  public void shouldNotTrackMetricsWhenToldNotTo() throws Exception {
-    resolver = DnsSrvResolvers.newBuilder()
-        .metered(false)
-        .build();
-
-    MetricsRegistry registry = Metrics.defaultRegistry();
-    assertThat(registry.allMetrics().get(new MetricName(DnsSrvResolver.class, "lookups")), is(nullValue()));
+    verify(timingReporter).stop();
+    verify(reporter, never()).reportFailure(isA(RuntimeException.class));
+    verify(reporter, never()).reportEmpty();
   }
 
   @Test
