@@ -16,13 +16,13 @@
 
 package com.spotify.dns;
 
-import static com.google.common.primitives.Ints.checkedCast;
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static java.util.concurrent.TimeUnit.SECONDS;
+import com.spotify.dns.statistics.DnsReporter;
 
 import org.xbill.DNS.Lookup;
 
-import com.spotify.dns.statistics.DnsReporter;
+import static com.google.common.primitives.Ints.checkedCast;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * Provides utility methods for instantiating and working with DnsSrvResolvers.

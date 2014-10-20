@@ -18,13 +18,12 @@ package com.spotify.dns;
 
 import com.google.common.base.Preconditions;
 import com.google.common.base.Throwables;
-import com.google.common.net.HostAndPort;
 
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static com.google.common.base.Objects.firstNonNull;
+import static com.google.common.base.MoreObjects.firstNonNull;
 
 /**
  * A caching DnsSrvResolver that keeps track of the previous results of a particular query. If
@@ -34,19 +33,19 @@ import static com.google.common.base.Objects.firstNonNull;
  */
 class RetainingDnsSrvResolver implements DnsSrvResolver {
   private final DnsSrvResolver delegate;
-  private final Map<String, List<HostAndPort>> cache;
+  private final Map<String, List<LookupResult>> cache;
 
   RetainingDnsSrvResolver(DnsSrvResolver delegate) {
     this.delegate = Preconditions.checkNotNull(delegate, "delegate");
-    cache = new ConcurrentHashMap<String, List<HostAndPort>>();
+    cache = new ConcurrentHashMap<String, List<LookupResult>>();
   }
 
   @Override
-  public List<HostAndPort> resolve(final String fqdn) {
+  public List<LookupResult> resolve(final String fqdn) {
     Preconditions.checkNotNull(fqdn, "fqdn");
 
     try {
-      List<HostAndPort> nodes = delegate.resolve(fqdn);
+      List<LookupResult> nodes = delegate.resolve(fqdn);
 
       if (nodes.isEmpty()) {
         nodes = firstNonNull(cache.get(fqdn), nodes);

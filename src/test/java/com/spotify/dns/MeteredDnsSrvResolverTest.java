@@ -16,6 +16,15 @@
 
 package com.spotify.dns;
 
+import com.spotify.dns.statistics.DnsReporter;
+import com.spotify.dns.statistics.DnsTimingContext;
+
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.util.List;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
@@ -23,25 +32,15 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.util.List;
-
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-
-import com.google.common.net.HostAndPort;
-import com.spotify.dns.statistics.DnsReporter;
-import com.spotify.dns.statistics.DnsTimingContext;
-
 public class MeteredDnsSrvResolverTest {
   private static final String FQDN = "nånting";
   private static final RuntimeException RUNTIME_EXCEPTION = new RuntimeException();
   private static final Error ERROR = new Error();
 
   @SuppressWarnings("unchecked")
-  private static final List<HostAndPort> EMPTY = mock(List.class);
+  private static final List<LookupResult> EMPTY = mock(List.class);
   @SuppressWarnings("unchecked")
-  private static final List<HostAndPort> NOT_EMPTY = mock(List.class);
+  private static final List<LookupResult> NOT_EMPTY = mock(List.class);
 
   static {
     when(EMPTY.isEmpty()).thenReturn(true);

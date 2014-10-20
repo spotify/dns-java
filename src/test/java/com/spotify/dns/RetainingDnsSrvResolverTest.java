@@ -16,7 +16,6 @@
 
 package com.spotify.dns;
 
-import com.google.common.net.HostAndPort;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -38,8 +37,8 @@ public class RetainingDnsSrvResolverTest {
 
   DnsSrvResolver delegate;
 
-  List<HostAndPort> nodes1;
-  List<HostAndPort> nodes2;
+  List<LookupResult> nodes1;
+  List<LookupResult> nodes2;
 
   @Rule
   public ExpectedException thrown = ExpectedException.none();

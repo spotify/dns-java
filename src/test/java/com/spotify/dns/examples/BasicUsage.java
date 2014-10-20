@@ -20,6 +20,7 @@ import com.google.common.net.HostAndPort;
 import com.spotify.dns.DnsException;
 import com.spotify.dns.DnsSrvResolver;
 import com.spotify.dns.DnsSrvResolvers;
+import com.spotify.dns.LookupResult;
 import com.spotify.dns.statistics.DnsReporter;
 import com.spotify.dns.statistics.DnsTimingContext;
 
@@ -52,9 +53,9 @@ public class BasicUsage {
         quit = true;
       } else {
         try {
-          List<HostAndPort> nodes = resolver.resolve(line);
+          List<LookupResult> nodes = resolver.resolve(line);
 
-          for (HostAndPort node : nodes) {
+          for (LookupResult node : nodes) {
             System.out.println(node);
           }
         }

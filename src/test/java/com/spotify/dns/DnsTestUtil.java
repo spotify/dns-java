@@ -27,13 +27,13 @@ import java.util.List;
  * Utility functions that are shared between tests.
  */
 public class DnsTestUtil {
-  static List<HostAndPort> nodes(String... nodeNames) {
+  static List<LookupResult> nodes(String... nodeNames) {
     return Lists.transform(
         Arrays.asList(nodeNames),
-        new Function<String, HostAndPort>() {
+        new Function<String, LookupResult>() {
           @Override
-          public HostAndPort apply(String input) {
-            return HostAndPort.fromParts(input, 8080);
+          public LookupResult apply(String input) {
+            return LookupResult.create(input, 8080, 1, 2);
           }
         }
     );

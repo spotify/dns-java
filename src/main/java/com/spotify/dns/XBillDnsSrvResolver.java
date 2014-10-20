@@ -18,7 +18,7 @@ package com.spotify.dns;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
-import com.google.common.net.HostAndPort;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xbill.DNS.Lookup;
@@ -41,13 +41,13 @@ class XBillDnsSrvResolver implements DnsSrvResolver {
   }
 
   @Override
-  public List<HostAndPort> resolve(final String fqdn) {
+  public List<LookupResult> resolve(final String fqdn) {
     Lookup lookup = lookupFactory.forName(fqdn);
     Record[] queryResult = lookup.run();
 
     switch (lookup.getResult()) {
       case Lookup.SUCCESSFUL:
-        return toHostAndPorts(queryResult);
+        return toLookupResults(queryResult);
       case Lookup.HOST_NOT_FOUND:
         // fallthrough
       case Lookup.TYPE_NOT_FOUND:
@@ -61,14 +61,17 @@ class XBillDnsSrvResolver implements DnsSrvResolver {
     }
   }
 
-  private List<HostAndPort> toHostAndPorts(Record[] queryResult) {
-    ImmutableList.Builder<HostAndPort> builder = ImmutableList.builder();
+  private List<LookupResult> toLookupResults(Record[] queryResult) {
+    ImmutableList.Builder<LookupResult> builder = ImmutableList.builder();
 
     if (queryResult != null) {
       for (Record record: queryResult) {
         if (record instanceof SRVRecord) {
           SRVRecord srvRecord = (SRVRecord) record;
-          builder.add(HostAndPort.fromParts(srvRecord.getTarget().toString(), srvRecord.getPort()));
+          builder.add(LookupResult.create(srvRecord.getTarget().toString(),
+                                          srvRecord.getPort(),
+                                          srvRecord.getPriority(),
+                                          srvRecord.getWeight()));
         }
       }
     }

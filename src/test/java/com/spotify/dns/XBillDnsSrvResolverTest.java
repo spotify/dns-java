@@ -78,12 +78,12 @@ public class XBillDnsSrvResolverTest {
 
     setupResponseForQuery(fqdn, fqdn, resultNodes);
 
-    List<HostAndPort> actual = resolver.resolve(fqdn);
+    List<LookupResult> actual = resolver.resolve(fqdn);
 
-    HashSet<String> nodeNames = new HashSet<String>(Lists.transform(actual, new Function<HostAndPort, String>() {
+    HashSet<String> nodeNames = new HashSet<String>(Lists.transform(actual, new Function<LookupResult, String>() {
       @Override
-      public String apply(HostAndPort input) {
-        return input.getHostText();
+      public String apply(LookupResult input) {
+        return input.host();
       }
     }));
 
