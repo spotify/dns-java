@@ -16,7 +16,6 @@
 
 package com.spotify.dns.examples;
 
-import com.google.common.net.HostAndPort;
 import com.spotify.dns.DnsException;
 import com.spotify.dns.DnsSrvResolver;
 import com.spotify.dns.DnsSrvResolvers;

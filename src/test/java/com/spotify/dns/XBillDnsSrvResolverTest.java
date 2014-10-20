@@ -18,7 +18,7 @@ package com.spotify.dns;
 
 import com.google.common.base.Function;
 import com.google.common.collect.Lists;
-import com.google.common.net.HostAndPort;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;

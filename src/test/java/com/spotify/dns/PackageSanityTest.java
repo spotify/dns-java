@@ -19,8 +19,6 @@ package com.spotify.dns;
 import com.google.common.base.Predicate;
 import com.google.common.testing.AbstractPackageSanityTests;
 
-import javax.annotation.Generated;
-
 public class PackageSanityTest extends AbstractPackageSanityTests {
   @Override
   public void setUp() throws Exception {

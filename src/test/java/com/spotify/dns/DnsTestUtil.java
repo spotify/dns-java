@@ -18,7 +18,6 @@ package com.spotify.dns;
 
 import com.google.common.base.Function;
 import com.google.common.collect.Lists;
-import com.google.common.net.HostAndPort;
 
 import java.util.Arrays;
 import java.util.List;

@@ -3,7 +3,7 @@ package com.spotify.dns;
 import com.google.auto.value.AutoValue;
 
 /**
- * TODO: document!
+ * Immutable data object with the relevant parts of an SRV record.
  */
 @AutoValue
 public abstract class LookupResult {
