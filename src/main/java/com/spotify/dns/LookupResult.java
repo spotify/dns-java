@@ -11,8 +11,9 @@ public abstract class LookupResult {
   public abstract int port();
   public abstract int priority();
   public abstract int weight();
+  public abstract long ttl();
 
-  public static LookupResult create(String host, int port, int priority, int weight) {
-    return new AutoValue_LookupResult(host, port, priority, weight);
+  public static LookupResult create(String host, int port, int priority, int weight, long ttl) {
+    return new AutoValue_LookupResult(host, port, priority, weight, ttl);
   }
 }

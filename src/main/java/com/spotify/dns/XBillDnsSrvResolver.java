@@ -71,7 +71,8 @@ class XBillDnsSrvResolver implements DnsSrvResolver {
           builder.add(LookupResult.create(srvRecord.getTarget().toString(),
                                           srvRecord.getPort(),
                                           srvRecord.getPriority(),
-                                          srvRecord.getWeight()));
+                                          srvRecord.getWeight(),
+                                          srvRecord.getTTL()));
         }
       }
     }

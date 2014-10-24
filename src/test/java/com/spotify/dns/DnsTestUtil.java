@@ -32,7 +32,7 @@ public class DnsTestUtil {
         new Function<String, LookupResult>() {
           @Override
           public LookupResult apply(String input) {
-            return LookupResult.create(input, 8080, 1, 2);
+            return LookupResult.create(input, 8080, 1, 2, 999);
           }
         }
     );
