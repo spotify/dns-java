@@ -19,6 +19,7 @@ package com.spotify.dns;
 import com.google.common.base.Preconditions;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+
 import org.xbill.DNS.Lookup;
 
 import java.util.concurrent.Callable;

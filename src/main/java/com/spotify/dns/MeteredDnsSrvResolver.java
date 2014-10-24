@@ -16,13 +16,12 @@
 
 package com.spotify.dns;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import com.spotify.dns.statistics.DnsReporter;
+import com.spotify.dns.statistics.DnsTimingContext;
 
 import java.util.List;
 
-import com.google.common.net.HostAndPort;
-import com.spotify.dns.statistics.DnsReporter;
-import com.spotify.dns.statistics.DnsTimingContext;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * Tracks metrics for DnsSrvResolver calls.
@@ -37,13 +36,13 @@ class MeteredDnsSrvResolver implements DnsSrvResolver {
   }
 
   @Override
-  public List<HostAndPort> resolve(String fqdn) {
+  public List<LookupResult> resolve(String fqdn) {
     // Only catch and report RuntimeException to avoid Error's since that would
     // most likely only aggravate any condition that causes them to be thrown.
 
     final DnsTimingContext resolveTimer = reporter.resolveTimer();
 
-    final List<HostAndPort> result;
+    final List<LookupResult> result;
 
     try {
       result = delegate.resolve(fqdn);

@@ -18,7 +18,7 @@ package com.spotify.dns;
 
 import com.google.common.base.Function;
 import com.google.common.collect.Lists;
-import com.google.common.net.HostAndPort;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -78,12 +78,12 @@ public class XBillDnsSrvResolverTest {
 
     setupResponseForQuery(fqdn, fqdn, resultNodes);
 
-    List<HostAndPort> actual = resolver.resolve(fqdn);
+    List<LookupResult> actual = resolver.resolve(fqdn);
 
-    HashSet<String> nodeNames = new HashSet<String>(Lists.transform(actual, new Function<HostAndPort, String>() {
+    HashSet<String> nodeNames = new HashSet<String>(Lists.transform(actual, new Function<LookupResult, String>() {
       @Override
-      public String apply(HostAndPort input) {
-        return input.getHostText();
+      public String apply(LookupResult input) {
+        return input.host();
       }
     }));
 

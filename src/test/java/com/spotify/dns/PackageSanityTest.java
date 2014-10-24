@@ -16,7 +16,20 @@
 
 package com.spotify.dns;
 
+import com.google.common.base.Predicate;
 import com.google.common.testing.AbstractPackageSanityTests;
 
 public class PackageSanityTest extends AbstractPackageSanityTests {
+  @Override
+  public void setUp() throws Exception {
+    ignoreClasses(new Predicate<Class<?>>() {
+      @Override
+      public boolean apply(Class<?> input) {
+        return input.getSimpleName().startsWith("AutoValue_");
+      }
+    });
+
+    super.setUp();
+  }
+
 }

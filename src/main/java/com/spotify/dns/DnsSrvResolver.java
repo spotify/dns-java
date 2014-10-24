@@ -16,8 +16,6 @@
 
 package com.spotify.dns;
 
-import com.google.common.net.HostAndPort;
-
 import java.util.List;
 
 /**
@@ -26,11 +24,11 @@ import java.util.List;
 public interface DnsSrvResolver {
   /**
    * Does a DNS SRV lookup for the supplied fully qualified domain name, and returns the
-   * matching hosts and ports.
+   * matching results.
    *
    * @param fqdn a DNS name to query for
-   * @return a possibly empty list of matching hosts and ports
+   * @return a possibly empty list of matching records
    * @throws DnsException if there was an error doing the DNS lookup
    */
-  List<HostAndPort> resolve(String fqdn);
+  List<LookupResult> resolve(String fqdn);
 }
