@@ -45,7 +45,7 @@ public class BasicUsage {
     BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
 
     while (!quit) {
-      System.out.print("Enter a SRV name: ");
+      System.out.print("Enter a SRV name (empty to quit): ");
       String line = in.readLine();
 
       if (line == null || line.isEmpty()) {
