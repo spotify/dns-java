@@ -16,10 +16,14 @@
 
 package com.spotify.dns;
 
+import com.google.common.base.Function;
+import com.google.common.base.Functions;
+
 import com.spotify.dns.statistics.DnsReporter;
 
 import org.xbill.DNS.Lookup;
 
+import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.primitives.Ints.checkedCast;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -28,10 +32,27 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * Provides utility methods for instantiating and working with DnsSrvResolvers.
  */
 public final class DnsSrvResolvers {
+
   private static final int DEFAULT_DNS_TIMEOUT_SECONDS = 5;
 
   public static DnsSrvResolverBuilder newBuilder() {
     return new DnsSrvResolverBuilder(null, false, false, SECONDS.toMillis(DEFAULT_DNS_TIMEOUT_SECONDS));
+  }
+
+  public static PollingDnsSrvResolver<LookupResult> pollingResolver(DnsSrvResolver resolver) {
+    checkNotNull(resolver, "resolver");
+
+    return new PollerImpl<LookupResult>(resolver, Functions.<LookupResult>identity());
+  }
+
+  public static <T> PollingDnsSrvResolver<T> pollingResolver(
+      DnsSrvResolver resolver,
+      Function<LookupResult, T> resultTransformer) {
+
+    checkNotNull(resolver, "resolver");
+    checkNotNull(resultTransformer, "resultTransformer");
+
+    return new PollerImpl<T>(resolver, resultTransformer);
   }
 
   public static final class DnsSrvResolverBuilder {

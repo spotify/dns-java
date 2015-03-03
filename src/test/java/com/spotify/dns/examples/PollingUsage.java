@@ -16,29 +16,40 @@
 
 package com.spotify.dns.examples;
 
+import com.google.common.base.Function;
+
 import com.spotify.dns.DnsException;
 import com.spotify.dns.DnsSrvResolver;
 import com.spotify.dns.DnsSrvResolvers;
+import com.spotify.dns.EndpointProvider;
 import com.spotify.dns.LookupResult;
-import com.spotify.dns.statistics.DnsReporter;
-import com.spotify.dns.statistics.DnsTimingContext;
+import com.spotify.dns.PollingDnsSrvResolver;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.List;
+import java.util.concurrent.TimeUnit;
 
-public final class BasicUsage {
+import javax.annotation.Nullable;
 
-  private static final DnsReporter REPORTER = new StdoutReporter();
+public final class PollingUsage {
 
   public static void main(String[] args) throws IOException {
     DnsSrvResolver resolver = DnsSrvResolvers.newBuilder()
         .cachingLookups(true)
         .retainingDataOnFailures(true)
-        .metered(REPORTER)
         .dnsLookupTimeoutMillis(1000)
         .build();
+
+    PollingDnsSrvResolver<String> poller = DnsSrvResolvers.pollingResolver(resolver,
+      new Function<LookupResult, String>() {
+        @Nullable
+        @Override
+        public String apply(@Nullable LookupResult input) {
+          return input.toString() + System.currentTimeMillis() / 5000;
+        }
+      }
+    );
 
     boolean quit = false;
     BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
@@ -51,11 +62,8 @@ public final class BasicUsage {
         quit = true;
       } else {
         try {
-          List<LookupResult> nodes = resolver.resolve(line);
-
-          for (LookupResult node : nodes) {
-            System.out.println(node);
-          }
+          poller.poll(line, 1, TimeUnit.SECONDS)
+              .setListener(new EndpointListener(line), false);
         }
         catch (DnsException e) {
           e.printStackTrace(System.out);
@@ -64,30 +72,20 @@ public final class BasicUsage {
     }
   }
 
-  public static class StdoutReporter implements DnsReporter {
-    @Override
-    public DnsTimingContext resolveTimer() {
-      return new DnsTimingContext() {
-        private final long start = System.currentTimeMillis();
+  static class EndpointListener implements EndpointProvider.Listener<String> {
 
-        @Override
-        public void stop() {
-          final long now = System.currentTimeMillis();
-          final long diff = now - start;
-          System.out.println("Request took " + diff + "ms");
-        }
-      };
+    final String name;
+
+    EndpointListener(String name) {
+      this.name = name;
     }
 
     @Override
-    public void reportFailure(Throwable error) {
-      System.err.println("Error when resolving: " + error);
-      error.printStackTrace(System.err);
-    }
-
-    @Override
-    public void reportEmpty() {
-      System.out.println("Empty response from server.");
+    public void endpointsChanged(EndpointProvider<String> endpointProvider) {
+      System.out.println("\nEndpoints changed for " + name);
+      for (String endpoint : endpointProvider.getEndpoints()) {
+        System.out.println("  " + endpoint);
+      }
     }
   }
 }

@@ -61,7 +61,7 @@ class XBillDnsSrvResolver implements DnsSrvResolver {
     }
   }
 
-  private List<LookupResult> toLookupResults(Record[] queryResult) {
+  private static List<LookupResult> toLookupResults(Record[] queryResult) {
     ImmutableList.Builder<LookupResult> builder = ImmutableList.builder();
 
     if (queryResult != null) {
