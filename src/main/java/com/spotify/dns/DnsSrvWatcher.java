@@ -16,17 +16,9 @@
 
 package com.spotify.dns;
 
-import java.util.concurrent.TimeUnit;
+import java.io.Closeable;
 
-public interface PollingDnsSrvResolver<T> {
+public interface DnsSrvWatcher<T> extends Closeable {
 
-  /**
-   * TODO: document
-   *
-   * @param fqdn
-   * @param refreshInterval
-   * @param refreshIntervalUnit
-   * @return
-   */
-  EndpointProvider<T> poll(String fqdn, long refreshInterval, TimeUnit refreshIntervalUnit);
+  ChangeNotifier<T> watch(String fqdn);
 }

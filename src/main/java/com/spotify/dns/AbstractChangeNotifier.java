@@ -16,14 +16,16 @@
 
 package com.spotify.dns;
 
+import java.util.Collections;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
- * A helper for implementing the {@link com.spotify.dns.EndpointProvider} interface.
+ * A helper for implementing the {@link ChangeNotifier} interface.
  */
-abstract class AbstractEndpointProvider<T> implements EndpointProvider<T> {
+abstract class AbstractChangeNotifier<T> implements ChangeNotifier<T> {
 
   private final AtomicReference<Listener<T>> listenerRef = new AtomicReference<Listener<T>>();
 
@@ -36,7 +38,7 @@ abstract class AbstractEndpointProvider<T> implements EndpointProvider<T> {
     }
 
     if (fire) {
-      fireEndpointsUpdated();
+      fireEndpointsUpdated(newChangeNotification(current(), Collections.<T>emptySet()));
     }
   }
 
@@ -49,7 +51,32 @@ abstract class AbstractEndpointProvider<T> implements EndpointProvider<T> {
 
   protected abstract void closeImplementation();
 
-  protected void fireEndpointsUpdated() {
-    listenerRef.get().endpointsChanged(this);
+  protected void fireEndpointsUpdated(ChangeNotification<T> changeNotification) {
+    listenerRef.get().endpointsChanged(changeNotification);
+  }
+
+  protected ChangeNotification<T> newChangeNotification(Set<T> current, Set<T> previous) {
+    return new ChangeNotificationImpl(current, previous);
+  }
+
+  private class ChangeNotificationImpl implements ChangeNotification<T> {
+
+    private final Set<T> current;
+    private final Set<T> previous;
+
+    protected ChangeNotificationImpl(Set<T> current, Set<T> previous) {
+      this.current = current;
+      this.previous = previous;
+    }
+
+    @Override
+    public Set<T> current() {
+      return Collections.unmodifiableSet(current);
+    }
+
+    @Override
+    public Set<T> previous() {
+      return Collections.unmodifiableSet(previous);
+    }
   }
 }

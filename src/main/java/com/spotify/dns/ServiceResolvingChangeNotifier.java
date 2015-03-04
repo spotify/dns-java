@@ -18,8 +18,6 @@ package com.spotify.dns;
 
 import com.google.common.base.Function;
 import com.google.common.collect.Sets;
-import com.google.common.util.concurrent.MoreExecutors;
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,67 +25,54 @@ import org.slf4j.LoggerFactory;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * An endpoint provider that resolves and provides tcp:// endpoints for a service using DNS. The
  * endpoints are refreshed at a configurable interval.
  */
-class ServiceResolvingEndpointProvider<T> extends AbstractEndpointProvider<T> {
+class ServiceResolvingChangeNotifier<T> extends AbstractChangeNotifier<T> {
 
-  private static final Logger log = LoggerFactory.getLogger(ServiceResolvingEndpointProvider.class);
-  private static final ScheduledExecutorService executor =
-      MoreExecutors.getExitingScheduledExecutorService(
-          new ScheduledThreadPoolExecutor(
-              1, new ThreadFactoryBuilder().setNameFormat("dns-lookup-%d").build()),
-              0, TimeUnit.SECONDS);
-
+  private static final Logger log = LoggerFactory.getLogger(ServiceResolvingChangeNotifier.class);
 
   private final DnsSrvResolver resolver;
-  private final ScheduledFuture<?> updaterFuture;
+  private final String fqdn;
   private final Function<LookupResult, T> resultTransformer;
 
-  private final String fqdn;
-
   private volatile Set<T> endpoints = Collections.emptySet();
+
+//  private final ScheduledFuture<?> updaterFuture;
 
   /**
    * Create an endpoint provider that provides endpoints using a srv resolver.
    *
    * @param resolver            The resolver to use.
-   * @param refreshInterval     The interval to refresh the DNS resolution.
-   * @param refreshIntervalUnit The timeunit of the refresh interval.
    * @param fqdn                The name to lookup SRV records for
    * @param resultTransformer   TODO
    */
-  public ServiceResolvingEndpointProvider(final DnsSrvResolver resolver,
-                                          final long refreshInterval,
-                                          final TimeUnit refreshIntervalUnit,
-                                          final String fqdn,
-                                          final Function<LookupResult, T> resultTransformer) {
-    checkArgument(refreshInterval > 0);
+  ServiceResolvingChangeNotifier(final DnsSrvResolver resolver,
+                                 final String fqdn,
+                                 final Function<LookupResult, T> resultTransformer) {
+
     this.resolver = checkNotNull(resolver);
-    this.resultTransformer = checkNotNull(resultTransformer, "resultTransformer");
     this.fqdn = checkNotNull(fqdn, "fqdn");
-
-    updaterFuture =
-        executor.scheduleWithFixedDelay(new Updater(), 0, refreshInterval, refreshIntervalUnit);
+    this.resultTransformer = checkNotNull(resultTransformer, "resultTransformer");
   }
 
   @Override
-  public void closeImplementation() {
-    updaterFuture.cancel(false);
+  protected void closeImplementation() {
+//    updaterFuture.cancel(false);
   }
 
   @Override
-  public Set<T> getEndpoints() {
+  public Set<T> current() {
     return Collections.unmodifiableSet(endpoints);
+  }
+
+  Runnable refreshTask() {
+    return new Updater();
   }
 
   private class Updater implements Runnable {
@@ -100,9 +85,13 @@ class ServiceResolvingEndpointProvider<T> extends AbstractEndpointProvider<T> {
         for (LookupResult node : nodes) {
           currentEndpoints.add(resultTransformer.apply(node));
         }
+
         if (!currentEndpoints.equals(endpoints)) {
+          final ChangeNotification<T> changeNotification =
+              newChangeNotification(currentEndpoints, endpoints);
           endpoints = currentEndpoints;
-          fireEndpointsUpdated();
+
+          fireEndpointsUpdated(changeNotification);
         }
       } catch (Exception e) {
         log.error(e.getMessage(), e);

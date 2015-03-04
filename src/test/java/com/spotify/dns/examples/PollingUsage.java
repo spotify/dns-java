@@ -17,13 +17,14 @@
 package com.spotify.dns.examples;
 
 import com.google.common.base.Function;
+import com.google.common.collect.Sets;
 
+import com.spotify.dns.ChangeNotifier;
 import com.spotify.dns.DnsException;
 import com.spotify.dns.DnsSrvResolver;
 import com.spotify.dns.DnsSrvResolvers;
-import com.spotify.dns.EndpointProvider;
+import com.spotify.dns.DnsSrvWatcher;
 import com.spotify.dns.LookupResult;
-import com.spotify.dns.PollingDnsSrvResolver;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -35,21 +36,24 @@ import javax.annotation.Nullable;
 public final class PollingUsage {
 
   public static void main(String[] args) throws IOException {
+    Function<LookupResult, Integer> resultTransformer = new Function<LookupResult, Integer>() {
+      @Nullable
+      @Override
+      public Integer apply(@Nullable LookupResult input) {
+        return input.weight();
+      }
+    };
+
     DnsSrvResolver resolver = DnsSrvResolvers.newBuilder()
         .cachingLookups(true)
         .retainingDataOnFailures(true)
         .dnsLookupTimeoutMillis(1000)
         .build();
 
-    PollingDnsSrvResolver<String> poller = DnsSrvResolvers.pollingResolver(resolver,
-      new Function<LookupResult, String>() {
-        @Nullable
-        @Override
-        public String apply(@Nullable LookupResult input) {
-          return input.toString() + System.currentTimeMillis() / 5000;
-        }
-      }
-    );
+
+    DnsSrvWatcher<LookupResult> watcher = DnsSrvResolvers.newWatcherBuilder(resolver)
+        .polling(1, TimeUnit.SECONDS)
+        .build();
 
     boolean quit = false;
     BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
@@ -62,8 +66,8 @@ public final class PollingUsage {
         quit = true;
       } else {
         try {
-          poller.poll(line, 1, TimeUnit.SECONDS)
-              .setListener(new EndpointListener(line), false);
+          ChangeNotifier<LookupResult> notifier = watcher.watch(line);
+          notifier.setListener(new ChangeListener(line), false);
         }
         catch (DnsException e) {
           e.printStackTrace(System.out);
@@ -72,19 +76,30 @@ public final class PollingUsage {
     }
   }
 
-  static class EndpointListener implements EndpointProvider.Listener<String> {
+  static class ChangeListener implements ChangeNotifier.Listener<LookupResult> {
 
     final String name;
 
-    EndpointListener(String name) {
+    ChangeListener(String name) {
       this.name = name;
     }
 
     @Override
-    public void endpointsChanged(EndpointProvider<String> endpointProvider) {
+    public void endpointsChanged(ChangeNotifier.ChangeNotification<LookupResult> changeNotification) {
       System.out.println("\nEndpoints changed for " + name);
-      for (String endpoint : endpointProvider.getEndpoints()) {
-        System.out.println("  " + endpoint);
+      for (LookupResult endpoint : changeNotification.previous()) {
+        System.out.println("  prev: " + endpoint);
+      }
+
+      for (LookupResult endpoint : changeNotification.current()) {
+        System.out.println("  curr: " + endpoint);
+      }
+
+      final Sets.SetView<LookupResult> unchanged =
+          Sets.intersection(changeNotification.current(), changeNotification.previous());
+
+      for (LookupResult endpoint : unchanged) {
+        System.out.println("  noch: " + endpoint);
       }
     }
   }

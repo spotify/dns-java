@@ -18,11 +18,18 @@ package com.spotify.dns;
 
 import com.google.common.base.Function;
 import com.google.common.base.Functions;
+import com.google.common.util.concurrent.MoreExecutors;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
 import com.spotify.dns.statistics.DnsReporter;
 
 import org.xbill.DNS.Lookup;
 
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.primitives.Ints.checkedCast;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -36,30 +43,92 @@ public final class DnsSrvResolvers {
   private static final int DEFAULT_DNS_TIMEOUT_SECONDS = 5;
 
   public static DnsSrvResolverBuilder newBuilder() {
-    return new DnsSrvResolverBuilder(null, false, false, SECONDS.toMillis(DEFAULT_DNS_TIMEOUT_SECONDS));
+    return new DnsSrvResolverBuilder();
   }
 
-  public static PollingDnsSrvResolver<LookupResult> pollingResolver(DnsSrvResolver resolver) {
+  public static DnsSrvWatcherBuilder<LookupResult> newWatcherBuilder(DnsSrvResolver resolver) {
     checkNotNull(resolver, "resolver");
 
-    return new PollerImpl<LookupResult>(resolver, Functions.<LookupResult>identity());
+    return new DnsSrvWatcherBuilder<LookupResult>(resolver, Functions.<LookupResult>identity());
   }
 
-  public static <T> PollingDnsSrvResolver<T> pollingResolver(
+  public static <T> DnsSrvWatcherBuilder<T> newWatcherBuilder(
       DnsSrvResolver resolver,
       Function<LookupResult, T> resultTransformer) {
 
     checkNotNull(resolver, "resolver");
     checkNotNull(resultTransformer, "resultTransformer");
 
-    return new PollerImpl<T>(resolver, resultTransformer);
+    return new DnsSrvWatcherBuilder<T>(resolver, resultTransformer);
+  }
+
+  public static final class DnsSrvWatcherBuilder<T> {
+
+    private final DnsSrvResolver resolver;
+    private final Function<LookupResult, T> resultTransformer;
+
+    private final boolean polling;
+    private final long pollingInterval;
+    private final TimeUnit pollingIntervalUnit;
+
+    private final ScheduledExecutorService scheduledExecutorService;
+
+    private DnsSrvWatcherBuilder(
+        DnsSrvResolver resolver,
+        Function<LookupResult, T> resultTransformer) {
+      this(resolver, resultTransformer, false, 0, null, null);
+    }
+
+    private DnsSrvWatcherBuilder(
+        DnsSrvResolver resolver,
+        Function<LookupResult, T> resultTransformer,
+        boolean polling,
+        long pollingInterval,
+        TimeUnit pollingIntervalUnit, ScheduledExecutorService scheduledExecutorService) {
+      this.resolver = resolver;
+      this.resultTransformer = resultTransformer;
+      this.polling = polling;
+      this.pollingInterval = pollingInterval;
+      this.pollingIntervalUnit = pollingIntervalUnit;
+      this.scheduledExecutorService = scheduledExecutorService;
+    }
+
+    public DnsSrvWatcher<T> build() {
+      ScheduledExecutorService executor = scheduledExecutorService != null
+          ? scheduledExecutorService
+          : MoreExecutors.getExitingScheduledExecutorService(
+              new ScheduledThreadPoolExecutor(
+                  1, new ThreadFactoryBuilder().setNameFormat("dns-lookup-%d").build()),
+              0, SECONDS);
+
+      return new PollingDnsSrvWatcher<T>(resolver, executor, resultTransformer, pollingInterval,
+                                         pollingIntervalUnit);
+    }
+
+    public DnsSrvWatcherBuilder<T> polling(long pollingInterval, TimeUnit pollingIntervalUnit) {
+      checkArgument(pollingInterval > 0);
+      checkNotNull(pollingIntervalUnit, "pollingIntervalUnit");
+
+      return new DnsSrvWatcherBuilder<T>(resolver, resultTransformer, true, pollingInterval,
+                                         pollingIntervalUnit, scheduledExecutorService);
+    }
+
+    public DnsSrvWatcherBuilder<T> usingExecutor(ScheduledExecutorService scheduledExecutorService) {
+      return new DnsSrvWatcherBuilder<T>(resolver, resultTransformer, polling, pollingInterval,
+                                         pollingIntervalUnit, scheduledExecutorService);
+    }
   }
 
   public static final class DnsSrvResolverBuilder {
+
     private final DnsReporter reporter;
     private final boolean retainData;
     private final boolean cacheLookups;
     private final long dnsLookupTimeoutMillis;
+
+    private DnsSrvResolverBuilder() {
+      this(null, false, false, SECONDS.toMillis(DEFAULT_DNS_TIMEOUT_SECONDS));
+    }
 
     private DnsSrvResolverBuilder(
         DnsReporter reporter,

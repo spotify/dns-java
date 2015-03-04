@@ -18,12 +18,12 @@ package com.spotify.dns;
 
 import java.util.Set;
 
-public interface EndpointProvider<T> {
+public interface ChangeNotifier<T> {
 
   /**
    * Get the current set of endpoints.
    */
-  Set<T> getEndpoints();
+  Set<T> current();
 
   /**
    * Set a listener to be called when the set of endpoints change.
@@ -49,8 +49,14 @@ public interface EndpointProvider<T> {
     /**
      * Signal that set of endpoints changed.
      *
-     * @param endpointProvider The endpoint provider that changed.
+     * @param changeNotification An object containing details about the change.
      */
-    void endpointsChanged(EndpointProvider<T> endpointProvider);
+    void endpointsChanged(ChangeNotification<T> changeNotification);
+  }
+
+  interface ChangeNotification<T> {
+
+    Set<T> current();
+    Set<T> previous();
   }
 }

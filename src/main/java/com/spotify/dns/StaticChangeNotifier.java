@@ -23,7 +23,7 @@ import java.util.Set;
 /**
  * An endpoint provider that provides a static set of endpoints.
  */
-class StaticEndpointProvider<T> extends AbstractEndpointProvider<T> {
+class StaticChangeNotifier<T> extends AbstractChangeNotifier<T> {
 
   private final Set<T> endpoints;
 
@@ -32,17 +32,17 @@ class StaticEndpointProvider<T> extends AbstractEndpointProvider<T> {
    *
    * @param endpoints The endpoints to provide.
    */
-  public StaticEndpointProvider(final Set<T> endpoints) {
+  public StaticChangeNotifier(final Set<T> endpoints) {
     this.endpoints = ImmutableSet.copyOf(endpoints);
   }
 
   @Override
-  public Set<T> getEndpoints() {
+  public Set<T> current() {
     return endpoints;
   }
 
   @Override
-  public void closeImplementation() {
+  protected void closeImplementation() {
     // empty implementation
   }
 }

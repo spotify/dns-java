@@ -27,42 +27,42 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * An endpoint provider that aggregates the endpoints provided by a list of other providers.
  * The intention is that the endpoint resolution will be done by
- * {@link ServiceResolvingEndpointProvider} and {@link StaticEndpointProvider} instances.
+ * {@link ServiceResolvingChangeNotifier} and {@link StaticChangeNotifier} instances.
  */
-class AggregatingEndpointProvider<T> extends AbstractEndpointProvider<T> {
-  private final List<EndpointProvider<T>> endpointProviders;
+class AggregatingChangeNotifier<T> extends AbstractChangeNotifier<T> {
+  private final List<ChangeNotifier<T>> changeNotifiers;
 
   /**
    * Create a new aggregating endpoint provider.
    *
-   * @param endpointProviders the providers to aggregate
+   * @param changeNotifiers the providers to aggregate
    */
-  public AggregatingEndpointProvider(final List<EndpointProvider<T>> endpointProviders) {
-    this.endpointProviders = ImmutableList.copyOf(checkNotNull(endpointProviders));
+  public AggregatingChangeNotifier(final List<ChangeNotifier<T>> changeNotifiers) {
+    this.changeNotifiers = ImmutableList.copyOf(checkNotNull(changeNotifiers));
 
     // Set up forwarding of endpoint updates
-    for (final EndpointProvider<T> endpointProvider : this.endpointProviders) {
-      endpointProvider.setListener(new Listener<T>() {
+    for (final ChangeNotifier<T> changeNotifier : this.changeNotifiers) {
+      changeNotifier.setListener(new Listener<T>() {
          @Override
-         public void endpointsChanged(final EndpointProvider<T> endpointProvider) {
-           AggregatingEndpointProvider.super.fireEndpointsUpdated();
+         public void endpointsChanged(final ChangeNotification<T> changeNotification) {
+           AggregatingChangeNotifier.super.fireEndpointsUpdated(changeNotification);
          }
        }, false);
     }
   }
 
   @Override
-  public Set<T> getEndpoints() {
+  public Set<T> current() {
     ImmutableSet.Builder<T> endpoints = ImmutableSet.builder();
-    for (final EndpointProvider<T> endpointProvider : endpointProviders) {
-      endpoints.addAll(endpointProvider.getEndpoints());
+    for (final ChangeNotifier<T> changeNotifier : changeNotifiers) {
+      endpoints.addAll(changeNotifier.current());
     }
     return endpoints.build();
   }
 
   @Override
   protected void closeImplementation() {
-    for (EndpointProvider<T> provider : endpointProviders) {
+    for (ChangeNotifier<T> provider : changeNotifiers) {
       provider.close();
     }
   }
