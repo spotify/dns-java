@@ -132,7 +132,7 @@ public final class DnsSrvResolvers {
           }
         };
       } else {
-        watcherFactory = dnsSrvWatcherFactory;
+        watcherFactory = checkNotNull(dnsSrvWatcherFactory);
       }
 
       return watcherFactory.create(changeNotifierFactory);

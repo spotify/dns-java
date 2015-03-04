@@ -47,11 +47,15 @@ class ServiceResolvingChangeNotifier<T> extends AbstractChangeNotifier<T>
 //  private final ScheduledFuture<?> updaterFuture;
 
   /**
-   * Create an endpoint provider that provides endpoints using a srv resolver.
+   * Create a {@link ChangeNotifier} that tracks changes from a {@link DnsSrvResolver}.
+   *
+   * The list of {@link LookupResult}s will be transformed using the provided function
+   * and put into a set. The set will then be compared to the previous set and if a
+   * change is detected, the notifier will fire.
    *
    * @param resolver            The resolver to use.
    * @param fqdn                The name to lookup SRV records for
-   * @param resultTransformer   TODO
+   * @param resultTransformer   The transform function
    */
   ServiceResolvingChangeNotifier(final DnsSrvResolver resolver,
                                  final String fqdn,

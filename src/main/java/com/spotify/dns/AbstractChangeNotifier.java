@@ -52,7 +52,12 @@ abstract class AbstractChangeNotifier<T> implements ChangeNotifier<T> {
   protected abstract void closeImplementation();
 
   protected void fireEndpointsUpdated(ChangeNotification<T> changeNotification) {
-    listenerRef.get().endpointsChanged(changeNotification);
+    checkNotNull(changeNotification, "changeNotification");
+
+    final Listener<T> listener = listenerRef.get();
+    if (listener != null) {
+      listener.endpointsChanged(changeNotification);
+    }
   }
 
   protected ChangeNotification<T> newChangeNotification(Set<T> current, Set<T> previous) {
