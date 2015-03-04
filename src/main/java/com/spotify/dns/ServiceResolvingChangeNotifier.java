@@ -33,7 +33,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * An endpoint provider that resolves and provides tcp:// endpoints for a service using DNS. The
  * endpoints are refreshed at a configurable interval.
  */
-class ServiceResolvingChangeNotifier<T> extends AbstractChangeNotifier<T> {
+class ServiceResolvingChangeNotifier<T> extends AbstractChangeNotifier<T>
+    implements ChangeNotifierFactory.RunnableChangeNotifier<T> {
 
   private static final Logger log = LoggerFactory.getLogger(ServiceResolvingChangeNotifier.class);
 
@@ -63,6 +64,7 @@ class ServiceResolvingChangeNotifier<T> extends AbstractChangeNotifier<T> {
 
   @Override
   protected void closeImplementation() {
+    // TODO: resolve
 //    updaterFuture.cancel(false);
   }
 
@@ -71,31 +73,24 @@ class ServiceResolvingChangeNotifier<T> extends AbstractChangeNotifier<T> {
     return Collections.unmodifiableSet(endpoints);
   }
 
-  Runnable refreshTask() {
-    return new Updater();
-  }
-
-  private class Updater implements Runnable {
-
-    @Override
-    public void run() {
-      try {
-        List<LookupResult> nodes = resolver.resolve(fqdn);
-        Set<T> currentEndpoints = Sets.newHashSet();
-        for (LookupResult node : nodes) {
-          currentEndpoints.add(resultTransformer.apply(node));
-        }
-
-        if (!currentEndpoints.equals(endpoints)) {
-          final ChangeNotification<T> changeNotification =
-              newChangeNotification(currentEndpoints, endpoints);
-          endpoints = currentEndpoints;
-
-          fireEndpointsUpdated(changeNotification);
-        }
-      } catch (Exception e) {
-        log.error(e.getMessage(), e);
+  @Override
+  public void run() {
+    try {
+      List<LookupResult> nodes = resolver.resolve(fqdn);
+      Set<T> currentEndpoints = Sets.newHashSet();
+      for (LookupResult node : nodes) {
+        currentEndpoints.add(resultTransformer.apply(node));
       }
+
+      if (!currentEndpoints.equals(endpoints)) {
+        final ChangeNotification<T> changeNotification =
+            newChangeNotification(currentEndpoints, endpoints);
+        endpoints = currentEndpoints;
+
+        fireEndpointsUpdated(changeNotification);
+      }
+    } catch (Exception e) {
+      log.error(e.getMessage(), e);
     }
   }
 }

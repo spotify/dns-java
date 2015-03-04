@@ -50,7 +50,6 @@ public final class PollingUsage {
         .dnsLookupTimeoutMillis(1000)
         .build();
 
-
     DnsSrvWatcher<LookupResult> watcher = DnsSrvResolvers.newWatcherBuilder(resolver)
         .polling(1, TimeUnit.SECONDS)
         .build();

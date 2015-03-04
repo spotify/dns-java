@@ -16,9 +16,9 @@
 
 package com.spotify.dns;
 
-import java.io.Closeable;
+public interface ChangeNotifierFactory<T> {
+  RunnableChangeNotifier<T> create(String fqdn);
 
-public interface DnsSrvWatcher<T> extends Closeable {
-
-  ChangeNotifier<T> watch(String fqdn);
+  interface RunnableChangeNotifier<T> extends ChangeNotifier<T>, Runnable {
+  }
 }

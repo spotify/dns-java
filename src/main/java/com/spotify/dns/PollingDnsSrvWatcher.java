@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2014 Spotify AB
+ * Copyright (c) 2012-2015 Spotify AB
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,44 +16,39 @@
 
 package com.spotify.dns;
 
-import com.google.common.base.Function;
-
 import java.io.IOException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static com.spotify.dns.ChangeNotifierFactory.RunnableChangeNotifier;
 
 class PollingDnsSrvWatcher<T> implements DnsSrvWatcher<T> {
 
-  private final DnsSrvResolver resolver;
+  private final ChangeNotifierFactory<T> changeNotifierFactory;
+
   private final ScheduledExecutorService executor;
-  private final Function<LookupResult, T> resultTransformer;
 
   private final long pollingInterval;
   private final TimeUnit pollingIntervalUnit;
 
-  PollingDnsSrvWatcher(DnsSrvResolver resolver,
+  PollingDnsSrvWatcher(ChangeNotifierFactory<T> changeNotifierFactory,
                        ScheduledExecutorService executor,
-                       Function<LookupResult, T> resultTransformer,
                        long pollingInterval,
                        TimeUnit pollingIntervalUnit) {
-    this.resolver = checkNotNull(resolver, "resolver");
+    this.changeNotifierFactory = checkNotNull(changeNotifierFactory, "changeNotifierFactory");
     this.executor = checkNotNull(executor, "executor");
-    this.resultTransformer = checkNotNull(resultTransformer, "resultTransformer");
     this.pollingInterval = pollingInterval;
     this.pollingIntervalUnit = checkNotNull(pollingIntervalUnit, "pollingIntervalUnit");
   }
 
   @Override
   public ChangeNotifier<T> watch(String fqdn) {
-    final ServiceResolvingChangeNotifier<T> changeNotifier =
-        new ServiceResolvingChangeNotifier<T>(resolver, fqdn, resultTransformer);
-    final Runnable refreshTask = changeNotifier.refreshTask();
+    final RunnableChangeNotifier<T> changeNotifier = changeNotifierFactory.create(fqdn);
 
     final ScheduledFuture<?> updaterFuture =
-        executor.scheduleWithFixedDelay(refreshTask, 0, pollingInterval, pollingIntervalUnit);
+        executor.scheduleWithFixedDelay(changeNotifier, 0, pollingInterval, pollingIntervalUnit);
 
     return changeNotifier;
   }

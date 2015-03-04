@@ -31,6 +31,7 @@ import java.util.concurrent.TimeUnit;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.primitives.Ints.checkedCast;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -71,12 +72,14 @@ public final class DnsSrvResolvers {
     private final long pollingInterval;
     private final TimeUnit pollingIntervalUnit;
 
+    private final DnsSrvWatcherFactory<T> dnsSrvWatcherFactory;
+
     private final ScheduledExecutorService scheduledExecutorService;
 
     private DnsSrvWatcherBuilder(
         DnsSrvResolver resolver,
         Function<LookupResult, T> resultTransformer) {
-      this(resolver, resultTransformer, false, 0, null, null);
+      this(resolver, resultTransformer, false, 0, null, null, null);
     }
 
     private DnsSrvWatcherBuilder(
@@ -84,25 +87,55 @@ public final class DnsSrvResolvers {
         Function<LookupResult, T> resultTransformer,
         boolean polling,
         long pollingInterval,
-        TimeUnit pollingIntervalUnit, ScheduledExecutorService scheduledExecutorService) {
+        TimeUnit pollingIntervalUnit,
+        DnsSrvWatcherFactory<T> dnsSrvWatcherFactory,
+        ScheduledExecutorService scheduledExecutorService) {
       this.resolver = resolver;
       this.resultTransformer = resultTransformer;
       this.polling = polling;
       this.pollingInterval = pollingInterval;
       this.pollingIntervalUnit = pollingIntervalUnit;
+      this.dnsSrvWatcherFactory = dnsSrvWatcherFactory;
       this.scheduledExecutorService = scheduledExecutorService;
     }
 
-    public DnsSrvWatcher<T> build() {
-      ScheduledExecutorService executor = scheduledExecutorService != null
-          ? scheduledExecutorService
-          : MoreExecutors.getExitingScheduledExecutorService(
-              new ScheduledThreadPoolExecutor(
-                  1, new ThreadFactoryBuilder().setNameFormat("dns-lookup-%d").build()),
-              0, SECONDS);
+    public interface DnsSrvWatcherFactory<T> {
+      DnsSrvWatcher<T> create(ChangeNotifierFactory<T> changeNotifierFactory);
+    }
 
-      return new PollingDnsSrvWatcher<T>(resolver, executor, resultTransformer, pollingInterval,
-                                         pollingIntervalUnit);
+    public DnsSrvWatcher<T> build() {
+      checkState(polling ^ dnsSrvWatcherFactory != null, "specify either polling or custom trigger");
+
+      final ChangeNotifierFactory<T> changeNotifierFactory =
+          new ChangeNotifierFactory<T>() {
+            @Override
+            public RunnableChangeNotifier<T> create(String fqdn) {
+              return new ServiceResolvingChangeNotifier<T>(resolver, fqdn, resultTransformer);
+            }
+          };
+
+      DnsSrvWatcherFactory<T> watcherFactory;
+      if (polling) {
+        final ScheduledExecutorService executor =
+            scheduledExecutorService != null
+            ? scheduledExecutorService
+            : MoreExecutors.getExitingScheduledExecutorService(
+                new ScheduledThreadPoolExecutor(
+                    1, new ThreadFactoryBuilder().setNameFormat("dns-lookup-%d").build()),
+                0, SECONDS);
+
+        watcherFactory = new DnsSrvWatcherFactory<T>() {
+          @Override
+          public DnsSrvWatcher<T> create(ChangeNotifierFactory<T> changeNotifierFactory) {
+            return new PollingDnsSrvWatcher<T>(changeNotifierFactory, executor, pollingInterval,
+                                               pollingIntervalUnit);
+          }
+        };
+      } else {
+        watcherFactory = dnsSrvWatcherFactory;
+      }
+
+      return watcherFactory.create(changeNotifierFactory);
     }
 
     public DnsSrvWatcherBuilder<T> polling(long pollingInterval, TimeUnit pollingIntervalUnit) {
@@ -110,12 +143,22 @@ public final class DnsSrvResolvers {
       checkNotNull(pollingIntervalUnit, "pollingIntervalUnit");
 
       return new DnsSrvWatcherBuilder<T>(resolver, resultTransformer, true, pollingInterval,
-                                         pollingIntervalUnit, scheduledExecutorService);
+                                         pollingIntervalUnit, dnsSrvWatcherFactory,
+                                         scheduledExecutorService);
+    }
+
+    public DnsSrvWatcherBuilder<T> customTrigger(DnsSrvWatcherFactory<T> watcherFactory) {
+      checkNotNull(watcherFactory, "watcherFactory");
+
+      return new DnsSrvWatcherBuilder<T>(resolver, resultTransformer, true, pollingInterval,
+                                         pollingIntervalUnit, watcherFactory,
+                                         scheduledExecutorService);
     }
 
     public DnsSrvWatcherBuilder<T> usingExecutor(ScheduledExecutorService scheduledExecutorService) {
       return new DnsSrvWatcherBuilder<T>(resolver, resultTransformer, polling, pollingInterval,
-                                         pollingIntervalUnit, scheduledExecutorService);
+                                         pollingIntervalUnit, dnsSrvWatcherFactory,
+                                         scheduledExecutorService);
     }
   }
 
