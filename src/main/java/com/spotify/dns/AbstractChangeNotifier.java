@@ -56,6 +56,9 @@ abstract class AbstractChangeNotifier<T> implements ChangeNotifier<T> {
   }
 
   protected ChangeNotification<T> newChangeNotification(Set<T> current, Set<T> previous) {
+    checkNotNull(current, "current");
+    checkNotNull(previous, "previous");
+
     return new ChangeNotificationImpl(current, previous);
   }
 
