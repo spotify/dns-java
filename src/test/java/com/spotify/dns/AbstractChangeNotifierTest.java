@@ -61,7 +61,6 @@ public class AbstractChangeNotifierTest {
 
       @Override
       public void closeImplementation() {
-        throw new UnsupportedOperationException();
       }
     };
   }
@@ -93,6 +92,15 @@ public class AbstractChangeNotifierTest {
     assertThat(notification.previous().size(), is(0));
     assertThat(notification.current().size(), is(2));
     assertThat(notification.current(), containsInAnyOrder("foo", "bar"));
+  }
+
+  @Test
+  public void shouldNotFireAfterClose() throws Exception {
+    sut.setListener(listener, false);
+    sut.close();
+    sut.fireRecordsUpdated(changeNotification);
+
+    verify(listener, never()).onChange(any(ChangeNotifier.ChangeNotification.class));
   }
 
   @Test
