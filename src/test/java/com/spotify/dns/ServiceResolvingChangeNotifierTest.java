@@ -16,7 +16,6 @@
 
 package com.spotify.dns;
 
-
 import com.google.common.base.Function;
 import com.google.common.base.Functions;
 
