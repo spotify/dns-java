@@ -19,7 +19,7 @@ package com.spotify.dns;
 import java.util.Set;
 
 /**
- * A change notifier represents a watched lookup from a {@link DnsSrvWatcher}, for a certain FQDN.
+ * A change notifier represents a watched lookup from a {@link DnsSrvWatcher}.
  *
  * The records can by of any type. Usually something that directly reflects what your application
  * will use the records for.

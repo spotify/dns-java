@@ -32,7 +32,7 @@ class StaticChangeNotifier<T> extends AbstractChangeNotifier<T> {
    *
    * @param records The records to provide.
    */
-  public StaticChangeNotifier(final Set<T> records) {
+  StaticChangeNotifier(final Set<T> records) {
     this.records = ImmutableSet.copyOf(records);
   }
 
