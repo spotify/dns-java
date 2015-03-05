@@ -18,6 +18,11 @@ package com.spotify.dns;
 
 import java.util.Set;
 
+/**
+ * TODO: document
+ *
+ * @param <T>
+ */
 public interface ChangeNotifier<T> {
 
   /**

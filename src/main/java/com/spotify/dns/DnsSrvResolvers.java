@@ -99,10 +99,6 @@ public final class DnsSrvResolvers {
       this.scheduledExecutorService = scheduledExecutorService;
     }
 
-    public interface DnsSrvWatcherFactory<T> {
-      DnsSrvWatcher<T> create(ChangeNotifierFactory<T> changeNotifierFactory);
-    }
-
     public DnsSrvWatcher<T> build() {
       checkState(polling ^ dnsSrvWatcherFactory != null, "specify either polling or custom trigger");
 

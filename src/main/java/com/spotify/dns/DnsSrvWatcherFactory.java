@@ -16,14 +16,12 @@
 
 package com.spotify.dns;
 
-import java.io.Closeable;
-
 /**
  * TODO: document
  *
  * @param <T>
  */
-public interface DnsSrvWatcher<T> extends Closeable {
+public interface DnsSrvWatcherFactory<T> {
 
-  ChangeNotifier<T> watch(String fqdn);
+  DnsSrvWatcher<T> create(ChangeNotifierFactory<T> changeNotifierFactory);
 }

@@ -16,7 +16,13 @@
 
 package com.spotify.dns;
 
+/**
+ * TODO: document
+ *
+ * @param <T>
+ */
 public interface ChangeNotifierFactory<T> {
+
   RunnableChangeNotifier<T> create(String fqdn);
 
   interface RunnableChangeNotifier<T> extends ChangeNotifier<T>, Runnable {

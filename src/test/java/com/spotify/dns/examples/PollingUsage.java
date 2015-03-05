@@ -16,7 +16,6 @@
 
 package com.spotify.dns.examples;
 
-import com.google.common.base.Function;
 import com.google.common.collect.Sets;
 
 import com.spotify.dns.ChangeNotifier;
@@ -31,19 +30,9 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.concurrent.TimeUnit;
 
-import javax.annotation.Nullable;
-
 public final class PollingUsage {
 
   public static void main(String[] args) throws IOException {
-    Function<LookupResult, Integer> resultTransformer = new Function<LookupResult, Integer>() {
-      @Nullable
-      @Override
-      public Integer apply(@Nullable LookupResult input) {
-        return input.weight();
-      }
-    };
-
     DnsSrvResolver resolver = DnsSrvResolvers.newBuilder()
         .cachingLookups(true)
         .retainingDataOnFailures(true)
