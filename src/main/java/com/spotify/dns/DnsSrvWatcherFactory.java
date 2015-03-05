@@ -17,11 +17,22 @@
 package com.spotify.dns;
 
 /**
- * TODO: document
+ * A factory for creating {@link DnsSrvWatcher} implementations.
  *
- * @param <T>
+ * A {@link ChangeNotifierFactory} is supplied for creating
+ * {@link ChangeNotifierFactory.RunnableChangeNotifier}s. It is up to the implementation of the
+ * {@link DnsSrvWatcher} to decide how to schdule runing of the created {@link ChangeNotifier}s.
+ *
+ * @param <T> The record type
  */
 public interface DnsSrvWatcherFactory<T> {
 
+  /**
+   * Creates a {@link DnsSrvWatcher} that should create {@link ChangeNotifier} instances using
+   * the given factory.
+   *
+   * @param changeNotifierFactory The factory to use for creating change notifier instances
+   * @return A {@link DnsSrvWatcher}
+   */
   DnsSrvWatcher<T> create(ChangeNotifierFactory<T> changeNotifierFactory);
 }

@@ -19,11 +19,20 @@ package com.spotify.dns;
 import java.io.Closeable;
 
 /**
- * TODO: document
+ * A watcher for DNS SRV records.
  *
- * @param <T>
+ * The records can by of any type. Usually something that directly reflects what your application
+ * will use the records for.
+ *
+ * @param <T> The record type
  */
 public interface DnsSrvWatcher<T> extends Closeable {
 
+  /**
+   * Starts watching a FQDN, by creating a {@link ChangeNotifier} for it.
+   *
+   * @param fqdn  The FQDN to watch
+   * @return  A change notifier that will reflect changes to the watched fqdn
+   */
   ChangeNotifier<T> watch(String fqdn);
 }

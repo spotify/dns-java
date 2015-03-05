@@ -19,23 +19,31 @@ package com.spotify.dns;
 import java.util.Set;
 
 /**
- * TODO: document
+ * A change notifier represents a watched lookup from a {@link DnsSrvWatcher}, for a certain FQDN.
  *
- * @param <T>
+ * The records can by of any type. Usually something that directly reflects what your application
+ * will use the records for.
+ *
+ * A {@link ChangeNotifier.Listener} can be attached to listen to change events on the watched set
+ * of records.
+ *
+ * @param <T> The records type
  */
 public interface ChangeNotifier<T> {
 
   /**
    * Get the current set of records.
+   *
+   * @return The current set of records
    */
   Set<T> current();
 
   /**
    * Set a listener to be called when the set of records change.
    *
-   * @param listener The listener to set.
+   * @param listener The listener to set
    * @param fire     Fire the notification event immediately. Can be used to ensure that no updates
-   *                 are missed when setting the listener.
+   *                 are missed when setting the listener
    */
   void setListener(Listener<T> listener, boolean fire);
 
@@ -47,18 +55,21 @@ public interface ChangeNotifier<T> {
   void close();
 
   /**
-   * A listener which will be called when the set of records change.
+   * A listener which will be called when the set of records change
    */
   interface Listener<T> {
 
     /**
      * Signal that set of records changed.
      *
-     * @param changeNotification An object containing details about the change.
+     * @param changeNotification An object containing details about the change
      */
     void onChange(ChangeNotification<T> changeNotification);
   }
 
+  /**
+   * A change event containing the current and previous set of records.
+   */
   interface ChangeNotification<T> {
     Set<T> current();
     Set<T> previous();

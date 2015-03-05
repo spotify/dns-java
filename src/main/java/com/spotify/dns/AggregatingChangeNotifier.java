@@ -26,7 +26,7 @@ import java.util.Set;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
- * A {@link ChangeNotifier} that aggregates the records provided by a list of other notifiers.
+ * A {@link ChangeNotifier} that aggregates the records provided by a list of notifiers.
  */
 class AggregatingChangeNotifier<T> extends AbstractChangeNotifier<T> {
 

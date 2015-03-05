@@ -23,6 +23,7 @@ import com.spotify.dns.DnsException;
 import com.spotify.dns.DnsSrvResolver;
 import com.spotify.dns.DnsSrvResolvers;
 import com.spotify.dns.DnsSrvWatcher;
+import com.spotify.dns.DnsSrvWatchers;
 import com.spotify.dns.LookupResult;
 
 import java.io.BufferedReader;
@@ -39,7 +40,7 @@ public final class PollingUsage {
         .dnsLookupTimeoutMillis(1000)
         .build();
 
-    DnsSrvWatcher<LookupResult> watcher = DnsSrvResolvers.newWatcherBuilder(resolver)
+    DnsSrvWatcher<LookupResult> watcher = DnsSrvWatchers.newBuilder(resolver)
         .polling(1, TimeUnit.SECONDS)
         .build();
 

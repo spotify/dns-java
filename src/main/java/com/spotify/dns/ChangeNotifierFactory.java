@@ -17,14 +17,26 @@
 package com.spotify.dns;
 
 /**
- * TODO: document
+ * Creates a {@link RunnableChangeNotifier} from a FQDN.
  *
- * @param <T>
+ * Intended to be used from {@link DnsSrvWatcherFactory} when implementing custom triggering
+ * schemes for {@link DnsSrvWatcher}s.
  */
 public interface ChangeNotifierFactory<T> {
 
+  /**
+   * Creates a {@link ChangeNotifier} that is a {@link Runnable}. When a check for a change should
+   * be executed is up to the caller of this method.
+   *
+   * @param fqdn The FQDN for the change notifier
+   * @return A runnable change notifier
+   */
   RunnableChangeNotifier<T> create(String fqdn);
 
+  /**
+   * A {@link ChangeNotifier} that that can be executed. A call to {@link Runnable#run()} will
+   * trigger a check for record changes.
+   */
   interface RunnableChangeNotifier<T> extends ChangeNotifier<T>, Runnable {
   }
 }
