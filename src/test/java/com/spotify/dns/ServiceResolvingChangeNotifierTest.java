@@ -35,7 +35,9 @@ import static com.google.common.collect.ImmutableList.of;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.junit.Assert.assertThat;
+import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -134,6 +136,20 @@ public class ServiceResolvingChangeNotifierTest {
     Assert.<Set<String>>assertThat(notification.current(), containsInAnyOrder("host"));
   }
 
+  @Test
+  @SuppressWarnings("unchecked")
+  public void shouldStopResolvingAfterClose() throws Exception {
+    ChangeNotifierFactory.RunnableChangeNotifier<LookupResult> sut = createNotifier();
+    ChangeNotifier.Listener<LookupResult> listener = mock(ChangeNotifier.Listener.class);
+    sut.setListener(listener, false);
+
+    sut.close();
+    sut.run();
+
+    verify(resolver, never()).resolve(any(String.class));
+    verify(listener, never()).onChange(any(ChangeNotifier.ChangeNotification.class));
+  }
+
   private ChangeNotifierFactory.RunnableChangeNotifier<LookupResult> createNotifier() {
     return new ServiceResolvingChangeNotifier<LookupResult>(
         resolver, FQDN, Functions.<LookupResult>identity());
@@ -150,7 +166,7 @@ public class ServiceResolvingChangeNotifierTest {
     });
   }
 
-  private LookupResult result(String host, int port) {
+  private static LookupResult result(String host, int port) {
     return LookupResult.create(host, port, 1, 5000, 300);
   }
 }

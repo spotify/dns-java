@@ -44,7 +44,7 @@ class ServiceResolvingChangeNotifier<T> extends AbstractChangeNotifier<T>
 
   private volatile Set<T> records = Collections.emptySet();
 
-//  private final ScheduledFuture<?> updaterFuture;
+  private volatile boolean run = true;
 
   /**
    * Create a {@link ChangeNotifier} that tracks changes from a {@link DnsSrvResolver}.
@@ -68,8 +68,7 @@ class ServiceResolvingChangeNotifier<T> extends AbstractChangeNotifier<T>
 
   @Override
   protected void closeImplementation() {
-    // TODO: resolve
-//    updaterFuture.cancel(false);
+    run = false;
   }
 
   @Override
@@ -79,6 +78,10 @@ class ServiceResolvingChangeNotifier<T> extends AbstractChangeNotifier<T>
 
   @Override
   public void run() {
+    if (!run) {
+      return;
+    }
+
     try {
       List<LookupResult> nodes = resolver.resolve(fqdn);
       Set<T> currentRecords = Sets.newHashSet();

@@ -74,6 +74,7 @@ public class AbstractChangeNotifierTest {
   }
 
   @Test
+  @SuppressWarnings("unchecked")
   public void shouldNotFireImmediatelyIfFalse() throws Exception {
     sut.setListener(listener, false);
 
@@ -81,6 +82,7 @@ public class AbstractChangeNotifierTest {
   }
 
   @Test
+  @SuppressWarnings("unchecked")
   public void shouldFireImmediatelyIfTrue() throws Exception {
     sut.setListener(listener, true);
 
@@ -95,6 +97,7 @@ public class AbstractChangeNotifierTest {
   }
 
   @Test
+  @SuppressWarnings("unchecked")
   public void shouldNotFireAfterClose() throws Exception {
     sut.setListener(listener, false);
     sut.close();
@@ -104,6 +107,7 @@ public class AbstractChangeNotifierTest {
   }
 
   @Test
+  @SuppressWarnings("unchecked")
   public void shouldNotAllowMultipleListeners() throws Exception {
     sut.setListener(listener, false);
 

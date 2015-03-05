@@ -45,7 +45,6 @@ abstract class AbstractChangeNotifier<T> implements ChangeNotifier<T> {
   @Override
   public final void close() {
     listenerRef.set(null);
-
     closeImplementation();
   }
 
