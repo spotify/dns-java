@@ -21,11 +21,11 @@ import java.util.Set;
 /**
  * A change notifier represents a watched lookup from a {@link DnsSrvWatcher}.
  *
- * The records can by of any type. Usually something that directly reflects what your application
- * will use the records for.
+ * <p>The records can by of any type. Usually something that directly reflects what your
+ * application will use the records for.
  *
- * A {@link ChangeNotifier.Listener} can be attached to listen to change events on the watched set
- * of records.
+ * <p>A {@link ChangeNotifier.Listener} can be attached to listen to change events on the watched
+ * set of records.
  *
  * @param <T> The records type
  */

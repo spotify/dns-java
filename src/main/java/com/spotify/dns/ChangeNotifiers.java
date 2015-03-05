@@ -28,7 +28,7 @@ public final class ChangeNotifiers {
   /**
    * Creates a {@link ChangeNotifier} that aggregates the records provided by a list of notifiers.
    *
-   * A change event on any of the input notifiers will propagate up the the returned notifier.
+   * <p>A change event on any of the input notifiers will propagate up the the returned notifier.
    * The set of previous and current records contained in the event will be the union of all
    * records in the input notifiers, before and after the change event.
    *
@@ -43,7 +43,7 @@ public final class ChangeNotifiers {
   /**
    * Create a {@link ChangeNotifier} with a static set of records.
    *
-   * This notifier will never generate any change events. Thus any attached
+   * <p>This notifier will never generate any change events. Thus any attached
    * {@link ChangeNotifier.Listener} will at most get one initial call to
    * {@link ChangeNotifier.Listener#onChange(ChangeNotifier.ChangeNotification)}
    * if they are attached with the {@code fire} argument set to {@code true}.

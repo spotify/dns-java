@@ -19,7 +19,7 @@ package com.spotify.dns;
 /**
  * Creates a {@link RunnableChangeNotifier} from a FQDN.
  *
- * Intended to be used from {@link DnsSrvWatcherFactory} when implementing custom triggering
+ * <p>Intended to be used from {@link DnsSrvWatcherFactory} when implementing custom triggering
  * schemes for {@link DnsSrvWatcher}s.
  */
 public interface ChangeNotifierFactory<T> {

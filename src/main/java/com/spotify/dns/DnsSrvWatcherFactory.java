@@ -19,7 +19,7 @@ package com.spotify.dns;
 /**
  * A factory for creating {@link DnsSrvWatcher} implementations.
  *
- * A {@link ChangeNotifierFactory} is supplied for creating
+ * <p>A {@link ChangeNotifierFactory} is supplied for creating
  * {@link ChangeNotifierFactory.RunnableChangeNotifier}s. It is up to the implementation of the
  * {@link DnsSrvWatcher} to decide how to schdule runing of the created {@link ChangeNotifier}s.
  *

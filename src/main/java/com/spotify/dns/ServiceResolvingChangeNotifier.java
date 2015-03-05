@@ -31,7 +31,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * A {@link ChangeNotifier} that resolves and provides records using a {@link DnsSrvResolver}.
  *
- * The records are refreshable when {@link #run()} is called.
+ * <p>The records are refreshable when {@link #run()} is called.
  */
 class ServiceResolvingChangeNotifier<T> extends AbstractChangeNotifier<T>
     implements ChangeNotifierFactory.RunnableChangeNotifier<T> {
@@ -49,7 +49,7 @@ class ServiceResolvingChangeNotifier<T> extends AbstractChangeNotifier<T>
   /**
    * Create a {@link ChangeNotifier} that tracks changes from a {@link DnsSrvResolver}.
    *
-   * The list of {@link LookupResult}s will be transformed using the provided function
+   * <p>The list of {@link LookupResult}s will be transformed using the provided function
    * and put into a set. The set will then be compared to the previous set and if a
    * change is detected, the notifier will fire.
    *
