@@ -64,10 +64,10 @@ abstract class AbstractChangeNotifier<T> implements ChangeNotifier<T> {
     checkNotNull(current, "current");
     checkNotNull(previous, "previous");
 
-    return new ChangeNotificationImpl(current, previous);
+    return new ChangeNotificationImpl<T>(current, previous);
   }
 
-  private class ChangeNotificationImpl implements ChangeNotification<T> {
+  private static class ChangeNotificationImpl<T> implements ChangeNotification<T> {
 
     private final Set<T> current;
     private final Set<T> previous;
