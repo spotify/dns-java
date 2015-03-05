@@ -35,6 +35,7 @@ import static com.google.common.collect.ImmutableList.of;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -109,6 +110,39 @@ public class ServiceResolvingChangeNotifierTest {
     assertThat(notification.previous().size(), is(0));
     assertThat(notification.current().size(), is(1));
     Assert.<Set<LookupResult>>assertThat(notification.current(), containsInAnyOrder(result));
+  }
+
+  @Test
+  @SuppressWarnings("unchecked")
+  public void shouldReturnImmutableSets() throws Exception {
+    ChangeNotifierFactory.RunnableChangeNotifier<LookupResult> sut = createNotifier();
+    ChangeNotifier.Listener<LookupResult> listener = mock(ChangeNotifier.Listener.class);
+
+    LookupResult result1 = result("host", 1234);
+    LookupResult result2 = result("host", 4321);
+    when(resolver.resolve(FQDN))
+        .thenReturn(of(result1), of(result1, result2));
+
+    sut.run();
+    sut.setListener(listener, true);
+    sut.run();
+
+    ArgumentCaptor<ChangeNotifier.ChangeNotification> captor =
+        ArgumentCaptor.forClass(ChangeNotifier.ChangeNotification.class);
+    verify(listener, times(2)).onChange(captor.capture());
+
+    for (ChangeNotifier.ChangeNotification notification : captor.getAllValues()){
+      try {
+        notification.previous().clear();
+        fail();
+      } catch (UnsupportedOperationException ignore) {
+      }
+      try {
+        notification.current().clear();
+        fail();
+      } catch (UnsupportedOperationException ignore) {
+      }
+    }
   }
 
   @Test
