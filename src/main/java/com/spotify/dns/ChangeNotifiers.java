@@ -16,33 +16,20 @@
 
 package com.spotify.dns;
 
-import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Sets;
 
-import java.util.Set;
+import java.util.Arrays;
 
-/**
- * A {@link ChangeNotifier} that provides a static set of records.
- */
-class StaticChangeNotifier<T> extends AbstractChangeNotifier<T> {
+public final class ChangeNotifiers {
 
-  private final Set<T> records;
-
-  /**
-   * Create a static {@link ChangeNotifier}.
-   *
-   * @param records The records to provide.
-   */
-  public StaticChangeNotifier(final Set<T> records) {
-    this.records = ImmutableSet.copyOf(records);
+  private ChangeNotifiers() {
   }
 
-  @Override
-  public Set<T> current() {
-    return records;
+  public static <T> ChangeNotifier<T> aggregate(ChangeNotifier<T>... notifiers) {
+    return new AggregatingChangeNotifier<T>(Arrays.asList(notifiers));
   }
 
-  @Override
-  protected void closeImplementation() {
+  public static <T> ChangeNotifier<T> staticRecords(T... records) {
+    return new StaticChangeNotifier<T>(Sets.newHashSet(records));
   }
 }
-

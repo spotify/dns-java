@@ -19,35 +19,51 @@ package com.spotify.dns;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
- * An endpoint provider that aggregates the endpoints provided by a list of other providers.
- * The intention is that the endpoint resolution will be done by
- * {@link ServiceResolvingChangeNotifier} and {@link StaticChangeNotifier} instances.
+ * A {@link ChangeNotifier} that aggregates the records provided by a list of other notifiers.
  */
 class AggregatingChangeNotifier<T> extends AbstractChangeNotifier<T> {
+
   private final List<ChangeNotifier<T>> changeNotifiers;
 
+  private volatile Set<T> records = Collections.emptySet();
+
   /**
-   * Create a new aggregating endpoint provider.
+   * Create a new aggregating {@link ChangeNotifier}.
    *
-   * @param changeNotifiers the providers to aggregate
+   * @param changeNotifiers the notifiers to aggregate
    */
   public AggregatingChangeNotifier(final List<ChangeNotifier<T>> changeNotifiers) {
     this.changeNotifiers = ImmutableList.copyOf(checkNotNull(changeNotifiers));
 
-    // Set up forwarding of endpoint updates
+    // Set up forwarding of listeners
     for (final ChangeNotifier<T> changeNotifier : this.changeNotifiers) {
       changeNotifier.setListener(new Listener<T>() {
          @Override
-         public void onChange(final ChangeNotification<T> changeNotification) {
-           AggregatingChangeNotifier.super.fireRecordsUpdated(changeNotification);
+         public void onChange(final ChangeNotification<T> ignored) {
+           checkChange();
          }
        }, false);
+    }
+
+    records = current();
+  }
+
+  private void checkChange() {
+    Set<T> currentRecords = current();
+
+    if (!currentRecords.equals(records)) {
+      final ChangeNotification<T> changeNotification =
+          newChangeNotification(currentRecords, records);
+      records = currentRecords;
+
+      fireRecordsUpdated(changeNotification);
     }
   }
 
