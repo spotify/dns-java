@@ -25,13 +25,13 @@ import org.slf4j.LoggerFactory;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.ScheduledFuture;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
- * An endpoint provider that resolves and provides tcp:// endpoints for a service using DNS. The
- * endpoints are refreshed at a configurable interval.
+ * A {@link ChangeNotifier} that resolves and provides records using a {@link DnsSrvResolver}.
+ *
+ * The records are refreshable when {@link #run()} is called.
  */
 class ServiceResolvingChangeNotifier<T> extends AbstractChangeNotifier<T>
     implements ChangeNotifierFactory.RunnableChangeNotifier<T> {
@@ -42,7 +42,7 @@ class ServiceResolvingChangeNotifier<T> extends AbstractChangeNotifier<T>
   private final String fqdn;
   private final Function<LookupResult, T> resultTransformer;
 
-  private volatile Set<T> endpoints = Collections.emptySet();
+  private volatile Set<T> records = Collections.emptySet();
 
 //  private final ScheduledFuture<?> updaterFuture;
 
@@ -74,24 +74,24 @@ class ServiceResolvingChangeNotifier<T> extends AbstractChangeNotifier<T>
 
   @Override
   public Set<T> current() {
-    return Collections.unmodifiableSet(endpoints);
+    return Collections.unmodifiableSet(records);
   }
 
   @Override
   public void run() {
     try {
       List<LookupResult> nodes = resolver.resolve(fqdn);
-      Set<T> currentEndpoints = Sets.newHashSet();
+      Set<T> currentRecords = Sets.newHashSet();
       for (LookupResult node : nodes) {
-        currentEndpoints.add(resultTransformer.apply(node));
+        currentRecords.add(resultTransformer.apply(node));
       }
 
-      if (!currentEndpoints.equals(endpoints)) {
+      if (!currentRecords.equals(records)) {
         final ChangeNotification<T> changeNotification =
-            newChangeNotification(currentEndpoints, endpoints);
-        endpoints = currentEndpoints;
+            newChangeNotification(currentRecords, records);
+        records = currentRecords;
 
-        fireEndpointsUpdated(changeNotification);
+        fireRecordsUpdated(changeNotification);
       }
     } catch (Exception e) {
       log.error(e.getMessage(), e);

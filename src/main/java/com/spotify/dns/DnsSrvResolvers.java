@@ -147,17 +147,17 @@ public final class DnsSrvResolvers {
                                          scheduledExecutorService);
     }
 
+    public DnsSrvWatcherBuilder<T> usingExecutor(ScheduledExecutorService scheduledExecutorService) {
+      return new DnsSrvWatcherBuilder<T>(resolver, resultTransformer, polling, pollingInterval,
+                                         pollingIntervalUnit, dnsSrvWatcherFactory,
+                                         scheduledExecutorService);
+    }
+
     public DnsSrvWatcherBuilder<T> customTrigger(DnsSrvWatcherFactory<T> watcherFactory) {
       checkNotNull(watcherFactory, "watcherFactory");
 
       return new DnsSrvWatcherBuilder<T>(resolver, resultTransformer, true, pollingInterval,
                                          pollingIntervalUnit, watcherFactory,
-                                         scheduledExecutorService);
-    }
-
-    public DnsSrvWatcherBuilder<T> usingExecutor(ScheduledExecutorService scheduledExecutorService) {
-      return new DnsSrvWatcherBuilder<T>(resolver, resultTransformer, polling, pollingInterval,
-                                         pollingIntervalUnit, dnsSrvWatcherFactory,
                                          scheduledExecutorService);
     }
   }

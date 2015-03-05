@@ -38,7 +38,7 @@ abstract class AbstractChangeNotifier<T> implements ChangeNotifier<T> {
     }
 
     if (fire) {
-      fireEndpointsUpdated(newChangeNotification(current(), Collections.<T>emptySet()));
+      fireRecordsUpdated(newChangeNotification(current(), Collections.<T>emptySet()));
     }
   }
 
@@ -51,16 +51,16 @@ abstract class AbstractChangeNotifier<T> implements ChangeNotifier<T> {
 
   protected abstract void closeImplementation();
 
-  protected void fireEndpointsUpdated(ChangeNotification<T> changeNotification) {
+  protected final void fireRecordsUpdated(ChangeNotification<T> changeNotification) {
     checkNotNull(changeNotification, "changeNotification");
 
     final Listener<T> listener = listenerRef.get();
     if (listener != null) {
-      listener.endpointsChanged(changeNotification);
+      listener.onChange(changeNotification);
     }
   }
 
-  protected ChangeNotification<T> newChangeNotification(Set<T> current, Set<T> previous) {
+  protected final ChangeNotification<T> newChangeNotification(Set<T> current, Set<T> previous) {
     checkNotNull(current, "current");
     checkNotNull(previous, "previous");
 

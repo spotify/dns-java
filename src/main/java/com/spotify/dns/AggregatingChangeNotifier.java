@@ -44,8 +44,8 @@ class AggregatingChangeNotifier<T> extends AbstractChangeNotifier<T> {
     for (final ChangeNotifier<T> changeNotifier : this.changeNotifiers) {
       changeNotifier.setListener(new Listener<T>() {
          @Override
-         public void endpointsChanged(final ChangeNotification<T> changeNotification) {
-           AggregatingChangeNotifier.super.fireEndpointsUpdated(changeNotification);
+         public void onChange(final ChangeNotification<T> changeNotification) {
+           AggregatingChangeNotifier.super.fireRecordsUpdated(changeNotification);
          }
        }, false);
     }

@@ -84,7 +84,7 @@ public final class PollingUsage {
     }
 
     @Override
-    public void endpointsChanged(ChangeNotifier.ChangeNotification<LookupResult> changeNotification) {
+    public void onChange(ChangeNotifier.ChangeNotification<LookupResult> changeNotification) {
       System.out.println("\nEndpoints changed for " + name);
       for (LookupResult endpoint : changeNotification.previous()) {
         System.out.println("  prev: " + endpoint);

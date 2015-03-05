@@ -21,12 +21,12 @@ import java.util.Set;
 public interface ChangeNotifier<T> {
 
   /**
-   * Get the current set of endpoints.
+   * Get the current set of records.
    */
   Set<T> current();
 
   /**
-   * Set a listener to be called when the set of endpoints change.
+   * Set a listener to be called when the set of records change.
    *
    * @param listener The listener to set.
    * @param fire     Fire the notification event immediately. Can be used to ensure that no updates
@@ -35,27 +35,26 @@ public interface ChangeNotifier<T> {
   void setListener(Listener<T> listener, boolean fire);
 
   /**
-   * Close this EndpointProvider, releasing any resources allocated. Once closed, no more Listener
-   * events will be fired. Implementations of EndpointProvider are not allowed to throw checked
-   * exceptions from close().
+   * Close this {@link ChangeNotifier}, releasing any resources allocated. Once closed, no more
+   * {@link Listener} events will be fired. Implementations of {@link ChangeNotifier} are not
+   * allowed to throw checked exceptions from close().
    */
   void close();
 
   /**
-   * A listener which will be called when the set of endpoints change.
+   * A listener which will be called when the set of records change.
    */
   interface Listener<T> {
 
     /**
-     * Signal that set of endpoints changed.
+     * Signal that set of records changed.
      *
      * @param changeNotification An object containing details about the change.
      */
-    void endpointsChanged(ChangeNotification<T> changeNotification);
+    void onChange(ChangeNotification<T> changeNotification);
   }
 
   interface ChangeNotification<T> {
-
     Set<T> current();
     Set<T> previous();
   }

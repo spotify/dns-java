@@ -70,7 +70,7 @@ public class ServiceResolvingChangeNotifierTest {
 
     ArgumentCaptor<ChangeNotifier.ChangeNotification> captor =
         ArgumentCaptor.forClass(ChangeNotifier.ChangeNotification.class);
-    verify(listener, times(2)).endpointsChanged(captor.capture());
+    verify(listener, times(2)).onChange(captor.capture());
 
     List<ChangeNotifier.ChangeNotification> notifications = captor.getAllValues();
     assertThat(notifications.size(), is(2));
@@ -102,7 +102,7 @@ public class ServiceResolvingChangeNotifierTest {
 
     ArgumentCaptor<ChangeNotifier.ChangeNotification> captor =
         ArgumentCaptor.forClass(ChangeNotifier.ChangeNotification.class);
-    verify(listener).endpointsChanged(captor.capture());
+    verify(listener).onChange(captor.capture());
 
     ChangeNotifier.ChangeNotification notification = captor.getValue();
     assertThat(notification.previous().size(), is(0));
@@ -127,7 +127,7 @@ public class ServiceResolvingChangeNotifierTest {
 
     ArgumentCaptor<ChangeNotifier.ChangeNotification> captor =
         ArgumentCaptor.forClass(ChangeNotifier.ChangeNotification.class);
-    verify(listener).endpointsChanged(captor.capture());
+    verify(listener).onChange(captor.capture());
 
     ChangeNotifier.ChangeNotification notification = captor.getValue();
     assertThat(notification.previous().size(), is(0));
