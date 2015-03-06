@@ -69,11 +69,11 @@ class AggregatingChangeNotifier<T> extends AbstractChangeNotifier<T> {
 
   @Override
   public Set<T> current() {
-    ImmutableSet.Builder<T> endpoints = ImmutableSet.builder();
+    ImmutableSet.Builder<T> records = ImmutableSet.builder();
     for (final ChangeNotifier<T> changeNotifier : changeNotifiers) {
-      endpoints.addAll(changeNotifier.current());
+      records.addAll(changeNotifier.current());
     }
-    return endpoints.build();
+    return records.build();
   }
 
   @Override
