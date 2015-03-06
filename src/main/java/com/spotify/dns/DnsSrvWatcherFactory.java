@@ -21,7 +21,7 @@ package com.spotify.dns;
  *
  * <p>A {@link ChangeNotifierFactory} is supplied for creating
  * {@link ChangeNotifierFactory.RunnableChangeNotifier}s. It is up to the implementation of the
- * {@link DnsSrvWatcher} to decide how to schdule runing of the created {@link ChangeNotifier}s.
+ * {@link DnsSrvWatcher} to decide how to schedule running of the created {@link ChangeNotifier}s.
  *
  * @param <T> The record type
  */

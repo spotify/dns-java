@@ -21,7 +21,7 @@ import java.io.Closeable;
 /**
  * A watcher for DNS SRV records.
  *
- * <p>The records can by of any type. Usually something that directly reflects what your
+ * <p>The records can be of any type. Usually something that directly reflects what your
  * application will use the records for.
  *
  * @param <T> The record type

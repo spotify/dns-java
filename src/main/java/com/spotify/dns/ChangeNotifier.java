@@ -21,7 +21,7 @@ import java.util.Set;
 /**
  * A change notifier represents a watched lookup from a {@link DnsSrvWatcher}.
  *
- * <p>The records can by of any type. Usually something that directly reflects what your
+ * <p>The records can be of any type. Usually something that directly reflects what your
  * application will use the records for.
  *
  * <p>A {@link ChangeNotifier.Listener} can be attached to listen to change events on the watched
