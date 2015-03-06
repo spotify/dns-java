@@ -21,9 +21,15 @@ set that up.
 
 The entry point to lookups is through an instance of
 [DnsSrvResolver](src/main/java/com/spotify/dns/DnsSrvResolver.java) obtained via the
-[DnsSrvResolvers](src/main/java/com/spotify/dns/DnsSrvResolvers.java) factory class. For example
-code, have a look at
-[BasicUsage example](src/test/java/com/spotify/dns/examples/BasicUsage.java)
+[DnsSrvResolvers](src/main/java/com/spotify/dns/DnsSrvResolvers.java) factory class.
+
+To periodically check a set of records and react to changes, use the
+[DnsSrvWatcher](src/main/java/com/spotify/dns/DnsSrvWatcher.java) interface obtained via the
+[DnsSrvWatchers](src/main/java/com/spotify/dns/DnsSrvWatchers.java) factory class.
+
+For example code, have a look at
+[BasicUsage example](src/test/java/com/spotify/dns/examples/BasicUsage.java) and
+[PollingUsage example](src/test/java/com/spotify/dns/examples/PollingUsage.java)
 
 To include the latest released version in your maven project, do:
 ```
