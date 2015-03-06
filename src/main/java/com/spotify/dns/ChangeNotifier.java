@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2015 Spotify AB
+ * Copyright (c) 2015 Spotify AB
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,8 +24,7 @@ import java.util.Set;
  * <p>The records can be of any type. Usually something that directly reflects what your
  * application will use the records for.
  *
- * <p>A {@link ChangeNotifier.Listener} can be attached to listen to change events on the watched
- * set of records.
+ * <p>A {@link Listener} can be attached to listen to change events on the watched set of records.
  *
  * @param <T> The records type
  */
