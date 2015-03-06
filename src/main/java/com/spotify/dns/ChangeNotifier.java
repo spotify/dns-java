@@ -40,9 +40,12 @@ public interface ChangeNotifier<T> {
   /**
    * Set a listener to be called when the set of records change.
    *
+   * <p>One one listener can be added. Multiple calls to this method is an error.
+   *
    * @param listener The listener to set
    * @param fire     Fire the notification event immediately. Can be used to ensure that no updates
    *                 are missed when setting the listener
+   * @throws IllegalStateException if called more than once
    */
   void setListener(Listener<T> listener, boolean fire);
 
