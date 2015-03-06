@@ -57,8 +57,7 @@ public final class PollingUsage {
         try {
           ChangeNotifier<LookupResult> notifier = watcher.watch(line);
           notifier.setListener(new ChangeListener(line), false);
-        }
-        catch (DnsException e) {
+        } catch (DnsException e) {
           e.printStackTrace(System.out);
         }
       }
