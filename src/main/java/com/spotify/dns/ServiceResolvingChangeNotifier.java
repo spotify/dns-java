@@ -17,12 +17,11 @@
 package com.spotify.dns;
 
 import com.google.common.base.Function;
-import com.google.common.collect.Sets;
+import com.google.common.collect.ImmutableSet;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
@@ -42,7 +41,7 @@ class ServiceResolvingChangeNotifier<T> extends AbstractChangeNotifier<T>
   private final String fqdn;
   private final Function<LookupResult, T> resultTransformer;
 
-  private volatile Set<T> records = Collections.emptySet();
+  private volatile Set<T> records = ImmutableSet.of();
 
   private volatile boolean run = true;
 
@@ -73,7 +72,7 @@ class ServiceResolvingChangeNotifier<T> extends AbstractChangeNotifier<T>
 
   @Override
   public Set<T> current() {
-    return Collections.unmodifiableSet(records);
+    return records;
   }
 
   @Override
@@ -84,15 +83,17 @@ class ServiceResolvingChangeNotifier<T> extends AbstractChangeNotifier<T>
 
     try {
       List<LookupResult> nodes = resolver.resolve(fqdn);
-      Set<T> currentRecords = Sets.newHashSet();
-      for (LookupResult node : nodes) {
-        currentRecords.add(resultTransformer.apply(node));
-      }
 
-      if (!currentRecords.equals(records)) {
+      ImmutableSet.Builder<T> builder = ImmutableSet.builder();
+      for (LookupResult node : nodes) {
+        builder.add(resultTransformer.apply(node));
+      }
+      Set<T> current = builder.build();
+
+      if (!current.equals(records)) {
         final ChangeNotification<T> changeNotification =
-            newChangeNotification(currentRecords, records);
-        records = currentRecords;
+            newChangeNotification(current, records);
+        records = current;
 
         fireRecordsUpdated(changeNotification);
       }
