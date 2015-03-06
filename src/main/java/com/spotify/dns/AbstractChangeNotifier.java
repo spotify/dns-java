@@ -33,12 +33,14 @@ abstract class AbstractChangeNotifier<T> implements ChangeNotifier<T> {
   public void setListener(final Listener<T> listener, final boolean fire) {
     checkNotNull(listener, "listener");
 
-    if (!listenerRef.compareAndSet(null, listener)) {
-      throw new IllegalStateException("Listener already set!");
-    }
+    synchronized (this) {
+      if (!listenerRef.compareAndSet(null, listener)) {
+        throw new IllegalStateException("Listener already set!");
+      }
 
-    if (fire) {
-      fireRecordsUpdated(newChangeNotification(current(), Collections.<T>emptySet()));
+      if (fire) {
+        fireRecordsUpdated(newChangeNotification(current(), Collections.<T>emptySet()));
+      }
     }
   }
 

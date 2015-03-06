@@ -55,7 +55,7 @@ class AggregatingChangeNotifier<T> extends AbstractChangeNotifier<T> {
     records = current();
   }
 
-  private void checkChange() {
+  private synchronized void checkChange() {
     Set<T> currentRecords = current();
 
     if (!currentRecords.equals(records)) {

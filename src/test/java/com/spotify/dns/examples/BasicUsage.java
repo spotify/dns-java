@@ -56,8 +56,7 @@ public final class BasicUsage {
           for (LookupResult node : nodes) {
             System.out.println(node);
           }
-        }
-        catch (DnsException e) {
+        } catch (DnsException e) {
           e.printStackTrace(System.out);
         }
       }
