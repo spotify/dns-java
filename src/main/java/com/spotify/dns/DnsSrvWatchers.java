@@ -35,12 +35,36 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  */
 public final class DnsSrvWatchers {
 
+  /**
+   * Creates a {@link DnsSrvWatcherBuilder} using the given {@link DnsSrvResolver}. The builder
+   * can be configured to have the desired behavior.
+   *
+   * <p>Exactly one of {@link DnsSrvWatcherBuilder#polling(long, TimeUnit)} or
+   * {@link DnsSrvWatcherBuilder#customTrigger(DnsSrvWatcherFactory)} must be used.
+   *
+   * @param resolver The resolver to use for lookups
+   * @return a builder for further configuring the watcher
+   */
   public static DnsSrvWatcherBuilder<LookupResult> newBuilder(DnsSrvResolver resolver) {
     checkNotNull(resolver, "resolver");
 
     return new DnsSrvWatcherBuilder<LookupResult>(resolver, Functions.<LookupResult>identity());
   }
 
+  /**
+   * Creates a {@link DnsSrvWatcherBuilder} using the given {@link DnsSrvResolver}. The builder
+   * can be configured to have the desired behavior.
+   *
+   * <p>This watcher will use a function that transforms the {@link LookupResult}s into an
+   * arbitrary type that will be used throughout the {@link DnsSrvWatcher} api.
+   *
+   * <p>Exactly one of {@link DnsSrvWatcherBuilder#polling(long, TimeUnit)} or
+   * {@link DnsSrvWatcherBuilder#customTrigger(DnsSrvWatcherFactory)} must be used.
+   *
+   * @param resolver          The resolver to use for lookups
+   * @param resultTransformer The transformer function
+   * @return a builder for further configuring the watcher
+   */
   public static <T> DnsSrvWatcherBuilder<T> newBuilder(
       DnsSrvResolver resolver,
       Function<LookupResult, T> resultTransformer) {
