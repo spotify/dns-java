@@ -19,7 +19,6 @@ package com.spotify.dns;
 import com.google.common.base.Function;
 import com.google.common.base.Functions;
 
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -27,7 +26,6 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 import java.util.List;
-import java.util.Set;
 
 import javax.annotation.Nullable;
 
@@ -41,6 +39,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 public class ServiceResolvingChangeNotifierTest {
@@ -49,6 +48,9 @@ public class ServiceResolvingChangeNotifierTest {
 
   @Mock
   public DnsSrvResolver resolver;
+
+  @Mock
+  ErrorHandler errorHandler;
 
   @Before
   public void setUp() throws Exception {
@@ -77,16 +79,16 @@ public class ServiceResolvingChangeNotifierTest {
     List<ChangeNotifier.ChangeNotification> notifications = captor.getAllValues();
     assertThat(notifications.size(), is(2));
 
-    ChangeNotifier.ChangeNotification change1 = notifications.get(0);
+    ChangeNotifier.ChangeNotification<LookupResult> change1 = notifications.get(0);
     assertThat(change1.previous().size(), is(0));
     assertThat(change1.current().size(), is(1));
-    Assert.<Set<LookupResult>>assertThat(change1.current(), containsInAnyOrder(result1));
+    assertThat(change1.current(), containsInAnyOrder(result1));
 
-    ChangeNotifier.ChangeNotification change2 = notifications.get(1);
+    ChangeNotifier.ChangeNotification<LookupResult> change2 = notifications.get(1);
     assertThat(change2.previous().size(), is(1));
-    Assert.<Set<LookupResult>>assertThat(change2.previous(), containsInAnyOrder(result1));
+    assertThat(change2.previous(), containsInAnyOrder(result1));
     assertThat(change2.current().size(), is(2));
-    Assert.<Set<LookupResult>>assertThat(change2.current(), containsInAnyOrder(result1, result2));
+    assertThat(change2.current(), containsInAnyOrder(result1, result2));
   }
 
   @Test
@@ -106,10 +108,10 @@ public class ServiceResolvingChangeNotifierTest {
         ArgumentCaptor.forClass(ChangeNotifier.ChangeNotification.class);
     verify(listener).onChange(captor.capture());
 
-    ChangeNotifier.ChangeNotification notification = captor.getValue();
+    ChangeNotifier.ChangeNotification<LookupResult> notification = captor.getValue();
     assertThat(notification.previous().size(), is(0));
     assertThat(notification.current().size(), is(1));
-    Assert.<Set<LookupResult>>assertThat(notification.current(), containsInAnyOrder(result));
+    assertThat(notification.current(), containsInAnyOrder(result));
   }
 
   @Test
@@ -131,7 +133,7 @@ public class ServiceResolvingChangeNotifierTest {
         ArgumentCaptor.forClass(ChangeNotifier.ChangeNotification.class);
     verify(listener, times(2)).onChange(captor.capture());
 
-    for (ChangeNotifier.ChangeNotification notification : captor.getAllValues()){
+    for (ChangeNotifier.ChangeNotification<LookupResult> notification : captor.getAllValues()){
       try {
         notification.previous().clear();
         fail();
@@ -164,10 +166,10 @@ public class ServiceResolvingChangeNotifierTest {
         ArgumentCaptor.forClass(ChangeNotifier.ChangeNotification.class);
     verify(listener).onChange(captor.capture());
 
-    ChangeNotifier.ChangeNotification notification = captor.getValue();
+    ChangeNotifier.ChangeNotification<String> notification = captor.getValue();
     assertThat(notification.previous().size(), is(0));
     assertThat(notification.current().size(), is(1));
-    Assert.<Set<String>>assertThat(notification.current(), containsInAnyOrder("host"));
+    assertThat(notification.current(), containsInAnyOrder("host"));
   }
 
   @Test
@@ -184,20 +186,64 @@ public class ServiceResolvingChangeNotifierTest {
     verify(listener, never()).onChange(any(ChangeNotifier.ChangeNotification.class));
   }
 
+  @Test
+  @SuppressWarnings("unchecked")
+  public void shouldDoSomethingWithNulls() throws Exception {
+    Function<LookupResult, String> f = mock(Function.class);
+    ChangeNotifierFactory.RunnableChangeNotifier<String> sut = createTransformingNotifier(f);
+    ChangeNotifier.Listener<String> listener = mock(ChangeNotifier.Listener.class);
+
+    when(resolver.resolve(FQDN))
+        .thenReturn(of(
+            result("host1", 1234),
+            result("host2", 1234),
+            result("host3", 1234)));
+
+    when(f.apply(any(LookupResult.class)))
+        .thenReturn("foo", null, "bar");
+
+    sut.setListener(listener, false);
+    sut.run();
+
+    verifyNoMoreInteractions(listener);
+  }
+
+  @Test
+  @SuppressWarnings("unchecked")
+  public void shouldCallErrorHandlerOnResolveErrors() throws Exception {
+    Function<LookupResult, String> f = mock(Function.class);
+    ChangeNotifierFactory.RunnableChangeNotifier<String> sut = createTransformingNotifier(f);
+    ChangeNotifier.Listener<String> listener = mock(ChangeNotifier.Listener.class);
+
+    DnsException exception = new DnsException("something wrong");
+    when(resolver.resolve(FQDN))
+        .thenThrow(exception);
+
+    sut.setListener(listener, false);
+    sut.run();
+
+    verify(errorHandler).handle(FQDN, exception);
+    verifyNoMoreInteractions(f);
+    verifyNoMoreInteractions(listener);
+  }
+
   private ChangeNotifierFactory.RunnableChangeNotifier<LookupResult> createNotifier() {
-    return new ServiceResolvingChangeNotifier<LookupResult>(
-        resolver, FQDN, Functions.<LookupResult>identity());
+    return createTransformingNotifier(Functions.<LookupResult>identity());
   }
 
   private ChangeNotifierFactory.RunnableChangeNotifier<String> createHostNotifier() {
-    return new ServiceResolvingChangeNotifier<String>(
-        resolver, FQDN, new Function<LookupResult, String>() {
+    return createTransformingNotifier(new Function<LookupResult, String>() {
       @Nullable
       @Override
       public String apply(@Nullable LookupResult input) {
         return input != null ? input.host() : null;
       }
     });
+  }
+
+  private <T> ChangeNotifierFactory.RunnableChangeNotifier<T> createTransformingNotifier(
+      Function<LookupResult, T> f) {
+    return new ServiceResolvingChangeNotifier<T>(resolver, FQDN, f, errorHandler);
   }
 
   private static LookupResult result(String host, int port) {

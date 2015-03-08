@@ -25,6 +25,8 @@ import org.slf4j.LoggerFactory;
 import java.util.List;
 import java.util.Set;
 
+import javax.annotation.Nullable;
+
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
@@ -41,6 +43,9 @@ class ServiceResolvingChangeNotifier<T> extends AbstractChangeNotifier<T>
   private final String fqdn;
   private final Function<LookupResult, T> resultTransformer;
 
+  @Nullable
+  private final ErrorHandler errorHandler;
+
   private volatile Set<T> records = ImmutableSet.of();
 
   private volatile boolean run = true;
@@ -52,17 +57,23 @@ class ServiceResolvingChangeNotifier<T> extends AbstractChangeNotifier<T>
    * and put into a set. The set will then be compared to the previous set and if a
    * change is detected, the notifier will fire.
    *
+   * <p>An optional {@link ErrorHandler} can be used to reacto on {@link DnsException}s thrown
+   * by the {@link DnsSrvResolver}.
+   *
    * @param resolver            The resolver to use.
    * @param fqdn                The name to lookup SRV records for
    * @param resultTransformer   The transform function
+   * @param errorHandler        The error handler that will receive exceptions
    */
   ServiceResolvingChangeNotifier(final DnsSrvResolver resolver,
                                  final String fqdn,
-                                 final Function<LookupResult, T> resultTransformer) {
+                                 final Function<LookupResult, T> resultTransformer,
+                                 @Nullable final ErrorHandler errorHandler) {
 
     this.resolver = checkNotNull(resolver);
     this.fqdn = checkNotNull(fqdn, "fqdn");
     this.resultTransformer = checkNotNull(resultTransformer, "resultTransformer");
+    this.errorHandler = errorHandler;
   }
 
   @Override
@@ -81,24 +92,38 @@ class ServiceResolvingChangeNotifier<T> extends AbstractChangeNotifier<T>
       return;
     }
 
+    final List<LookupResult> nodes;
     try {
-      List<LookupResult> nodes = resolver.resolve(fqdn);
-
-      ImmutableSet.Builder<T> builder = ImmutableSet.builder();
-      for (LookupResult node : nodes) {
-        builder.add(resultTransformer.apply(node));
+      nodes = resolver.resolve(fqdn);
+    } catch (DnsException e) {
+      if (errorHandler != null) {
+        errorHandler.handle(fqdn, e);
       }
-      Set<T> current = builder.build();
-
-      if (!current.equals(records)) {
-        final ChangeNotification<T> changeNotification =
-            newChangeNotification(current, records);
-        records = current;
-
-        fireRecordsUpdated(changeNotification);
-      }
+      return;
     } catch (Exception e) {
       log.error(e.getMessage(), e);
+      return;
+    }
+
+    final Set<T> current;
+    try {
+      ImmutableSet.Builder<T> builder = ImmutableSet.builder();
+      for (LookupResult node : nodes) {
+        T transformed = resultTransformer.apply(node);
+        builder.add(checkNotNull(transformed, "transformed"));
+      }
+      current = builder.build();
+    } catch (Exception e) {
+      log.error(e.getMessage(), e);
+      return;
+    }
+
+    if (!current.equals(records)) {
+      final ChangeNotification<T> changeNotification =
+          newChangeNotification(current, records);
+      records = current;
+
+      fireRecordsUpdated(changeNotification);
     }
   }
 }

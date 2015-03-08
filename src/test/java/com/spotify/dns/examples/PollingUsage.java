@@ -24,6 +24,7 @@ import com.spotify.dns.DnsSrvResolver;
 import com.spotify.dns.DnsSrvResolvers;
 import com.spotify.dns.DnsSrvWatcher;
 import com.spotify.dns.DnsSrvWatchers;
+import com.spotify.dns.ErrorHandler;
 import com.spotify.dns.LookupResult;
 
 import java.io.BufferedReader;
@@ -36,12 +37,12 @@ public final class PollingUsage {
   public static void main(String[] args) throws IOException {
     DnsSrvResolver resolver = DnsSrvResolvers.newBuilder()
         .cachingLookups(true)
-        .retainingDataOnFailures(true)
         .dnsLookupTimeoutMillis(1000)
         .build();
 
     DnsSrvWatcher<LookupResult> watcher = DnsSrvWatchers.newBuilder(resolver)
         .polling(1, TimeUnit.SECONDS)
+        .withErrorHandler(new ErrorPrinter())
         .build();
 
     boolean quit = false;
@@ -61,6 +62,15 @@ public final class PollingUsage {
           e.printStackTrace(System.out);
         }
       }
+    }
+  }
+
+  static class ErrorPrinter implements ErrorHandler {
+
+    @Override
+    public void handle(String fqdn, DnsException exception) {
+      System.out.println("Error with " + fqdn);
+      exception.printStackTrace();
     }
   }
 

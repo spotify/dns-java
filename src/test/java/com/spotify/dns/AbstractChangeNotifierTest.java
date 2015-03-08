@@ -32,6 +32,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -113,5 +114,16 @@ public class AbstractChangeNotifierTest {
 
     thrown.expect(IllegalStateException.class);
     sut.setListener(mock(ChangeNotifier.Listener.class), false);
+  }
+
+  @Test
+  @SuppressWarnings("unchecked")
+  public void shouldIgnoreListenerExceptions() throws Exception {
+    doThrow(new RuntimeException("stupid listener"))
+        .when(listener)
+        .onChange(any(ChangeNotifier.ChangeNotification.class));
+
+    sut.setListener(listener, false);
+    sut.fireRecordsUpdated(changeNotification);
   }
 }

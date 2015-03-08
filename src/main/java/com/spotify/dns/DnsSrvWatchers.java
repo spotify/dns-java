@@ -84,6 +84,8 @@ public final class DnsSrvWatchers {
     private final long pollingInterval;
     private final TimeUnit pollingIntervalUnit;
 
+    private final ErrorHandler errorHandler;
+
     private final DnsSrvWatcherFactory<T> dnsSrvWatcherFactory;
 
     private final ScheduledExecutorService scheduledExecutorService;
@@ -91,7 +93,7 @@ public final class DnsSrvWatchers {
     private DnsSrvWatcherBuilder(
         DnsSrvResolver resolver,
         Function<LookupResult, T> resultTransformer) {
-      this(resolver, resultTransformer, false, 0, null, null, null);
+      this(resolver, resultTransformer, false, 0, null, null, null, null);
     }
 
     private DnsSrvWatcherBuilder(
@@ -100,6 +102,7 @@ public final class DnsSrvWatchers {
         boolean polling,
         long pollingInterval,
         TimeUnit pollingIntervalUnit,
+        ErrorHandler errorHandler,
         DnsSrvWatcherFactory<T> dnsSrvWatcherFactory,
         ScheduledExecutorService scheduledExecutorService) {
       this.resolver = resolver;
@@ -107,6 +110,7 @@ public final class DnsSrvWatchers {
       this.polling = polling;
       this.pollingInterval = pollingInterval;
       this.pollingIntervalUnit = pollingIntervalUnit;
+      this.errorHandler = errorHandler;
       this.dnsSrvWatcherFactory = dnsSrvWatcherFactory;
       this.scheduledExecutorService = scheduledExecutorService;
     }
@@ -118,7 +122,8 @@ public final class DnsSrvWatchers {
           new ChangeNotifierFactory<T>() {
             @Override
             public RunnableChangeNotifier<T> create(String fqdn) {
-              return new ServiceResolvingChangeNotifier<T>(resolver, fqdn, resultTransformer);
+              return new ServiceResolvingChangeNotifier<T>(resolver, fqdn, resultTransformer,
+                                                           errorHandler);
             }
           };
 
@@ -151,13 +156,13 @@ public final class DnsSrvWatchers {
       checkNotNull(pollingIntervalUnit, "pollingIntervalUnit");
 
       return new DnsSrvWatcherBuilder<T>(resolver, resultTransformer, true, pollingInterval,
-                                         pollingIntervalUnit, dnsSrvWatcherFactory,
+                                         pollingIntervalUnit, errorHandler, dnsSrvWatcherFactory,
                                          scheduledExecutorService);
     }
 
     public DnsSrvWatcherBuilder<T> usingExecutor(ScheduledExecutorService scheduledExecutorService) {
       return new DnsSrvWatcherBuilder<T>(resolver, resultTransformer, polling, pollingInterval,
-                                         pollingIntervalUnit, dnsSrvWatcherFactory,
+                                         pollingIntervalUnit, errorHandler, dnsSrvWatcherFactory,
                                          scheduledExecutorService);
     }
 
@@ -165,7 +170,15 @@ public final class DnsSrvWatchers {
       checkNotNull(watcherFactory, "watcherFactory");
 
       return new DnsSrvWatcherBuilder<T>(resolver, resultTransformer, true, pollingInterval,
-                                         pollingIntervalUnit, watcherFactory,
+                                         pollingIntervalUnit, errorHandler, watcherFactory,
+                                         scheduledExecutorService);
+    }
+
+    public DnsSrvWatcherBuilder<T> withErrorHandler(ErrorHandler errorHandler) {
+      checkNotNull(errorHandler, "errorHandler");
+
+      return new DnsSrvWatcherBuilder<T>(resolver, resultTransformer, true, pollingInterval,
+                                         pollingIntervalUnit, errorHandler, dnsSrvWatcherFactory,
                                          scheduledExecutorService);
     }
   }

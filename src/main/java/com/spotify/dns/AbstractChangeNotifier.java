@@ -16,6 +16,9 @@
 
 package com.spotify.dns;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.Collections;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
@@ -26,6 +29,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * A helper for implementing the {@link ChangeNotifier} interface.
  */
 abstract class AbstractChangeNotifier<T> implements ChangeNotifier<T> {
+
+  private static final Logger log = LoggerFactory.getLogger(AbstractChangeNotifier.class);
 
   private final AtomicReference<Listener<T>> listenerRef = new AtomicReference<Listener<T>>();
 
@@ -57,7 +62,11 @@ abstract class AbstractChangeNotifier<T> implements ChangeNotifier<T> {
 
     final Listener<T> listener = listenerRef.get();
     if (listener != null) {
-      listener.onChange(changeNotification);
+      try {
+        listener.onChange(changeNotification);
+      } catch (Throwable e) {
+        log.error("Change notification lister threw exception", e);
+      }
     }
   }
 
