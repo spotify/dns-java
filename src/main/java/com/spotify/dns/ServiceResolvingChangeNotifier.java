@@ -99,6 +99,7 @@ class ServiceResolvingChangeNotifier<T> extends AbstractChangeNotifier<T>
       if (errorHandler != null) {
         errorHandler.handle(fqdn, e);
       }
+      log.error(e.getMessage(), e);
       return;
     } catch (Exception e) {
       log.error(e.getMessage(), e);
