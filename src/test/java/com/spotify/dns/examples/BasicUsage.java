@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2014 Spotify AB
+ * Copyright (c) 2015 Spotify AB
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,13 +27,12 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
 
-public class BasicUsage {
+public final class BasicUsage {
 
-  private static DnsReporter REPORTER = new StdoutReporter();
+  private static final DnsReporter REPORTER = new StdoutReporter();
 
-  public static void main(String[] args) throws ExecutionException, InterruptedException, IOException {
+  public static void main(String[] args) throws IOException {
     DnsSrvResolver resolver = DnsSrvResolvers.newBuilder()
         .cachingLookups(true)
         .retainingDataOnFailures(true)
@@ -57,8 +56,7 @@ public class BasicUsage {
           for (LookupResult node : nodes) {
             System.out.println(node);
           }
-        }
-        catch (DnsException e) {
+        } catch (DnsException e) {
           e.printStackTrace(System.out);
         }
       }

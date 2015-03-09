@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2014 Spotify AB
+ * Copyright (c) 2015 Spotify AB
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -61,7 +61,7 @@ class XBillDnsSrvResolver implements DnsSrvResolver {
     }
   }
 
-  private List<LookupResult> toLookupResults(Record[] queryResult) {
+  private static List<LookupResult> toLookupResults(Record[] queryResult) {
     ImmutableList.Builder<LookupResult> builder = ImmutableList.builder();
 
     if (queryResult != null) {

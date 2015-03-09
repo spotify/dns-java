@@ -14,11 +14,19 @@
  * limitations under the License.
  */
 
-package com.spotify.dns.statistics;
+package com.spotify.dns;
 
 /**
- * Implement to handle timings when performing dns requests.
+ * Error handler callback for errors thrown by the {@link DnsSrvResolver} used in a
+ * {@link DnsSrvWatcher}.
  */
-public interface DnsTimingContext {
-  void stop();
+public interface ErrorHandler {
+
+  /**
+   * Handles a {@link DnsException} for the given FQDN.
+   *
+   * @param fqdn       The FQDN that was resolved
+   * @param exception  The exception thrown
+   */
+  void handle(String fqdn, DnsException exception);
 }

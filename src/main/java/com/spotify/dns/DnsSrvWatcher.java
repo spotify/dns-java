@@ -14,11 +14,25 @@
  * limitations under the License.
  */
 
-package com.spotify.dns.statistics;
+package com.spotify.dns;
+
+import java.io.Closeable;
 
 /**
- * Implement to handle timings when performing dns requests.
+ * A watcher for DNS SRV records.
+ *
+ * <p>The records can be of any type. Usually something that directly reflects what your
+ * application will use the records for.
+ *
+ * @param <T> The record type
  */
-public interface DnsTimingContext {
-  void stop();
+public interface DnsSrvWatcher<T> extends Closeable {
+
+  /**
+   * Starts watching a FQDN, by creating a {@link ChangeNotifier} for it.
+   *
+   * @param fqdn  The FQDN to watch
+   * @return  A change notifier that will reflect changes to the watched fqdn
+   */
+  ChangeNotifier<T> watch(String fqdn);
 }

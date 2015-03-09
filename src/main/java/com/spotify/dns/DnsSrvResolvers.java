@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2014 Spotify AB
+ * Copyright (c) 2015 Spotify AB
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,20 +25,26 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
- * Provides utility methods for instantiating and working with DnsSrvResolvers.
+ * Provides builders for configuring and instantiating {@link DnsSrvResolver}s.
  */
 public final class DnsSrvResolvers {
+
   private static final int DEFAULT_DNS_TIMEOUT_SECONDS = 5;
 
   public static DnsSrvResolverBuilder newBuilder() {
-    return new DnsSrvResolverBuilder(null, false, false, SECONDS.toMillis(DEFAULT_DNS_TIMEOUT_SECONDS));
+    return new DnsSrvResolverBuilder();
   }
 
   public static final class DnsSrvResolverBuilder {
+
     private final DnsReporter reporter;
     private final boolean retainData;
     private final boolean cacheLookups;
     private final long dnsLookupTimeoutMillis;
+
+    private DnsSrvResolverBuilder() {
+      this(null, false, false, SECONDS.toMillis(DEFAULT_DNS_TIMEOUT_SECONDS));
+    }
 
     private DnsSrvResolverBuilder(
         DnsReporter reporter,

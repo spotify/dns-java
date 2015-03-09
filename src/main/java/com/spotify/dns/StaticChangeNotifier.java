@@ -14,11 +14,35 @@
  * limitations under the License.
  */
 
-package com.spotify.dns.statistics;
+package com.spotify.dns;
+
+import com.google.common.collect.ImmutableSet;
+
+import java.util.Set;
 
 /**
- * Implement to handle timings when performing dns requests.
+ * A {@link ChangeNotifier} that provides a static set of records.
  */
-public interface DnsTimingContext {
-  void stop();
+class StaticChangeNotifier<T> extends AbstractChangeNotifier<T> {
+
+  private final Set<T> records;
+
+  /**
+   * Create a static {@link ChangeNotifier}.
+   *
+   * @param records The records to provide.
+   */
+  StaticChangeNotifier(final Set<T> records) {
+    this.records = ImmutableSet.copyOf(records);
+  }
+
+  @Override
+  public Set<T> current() {
+    return records;
+  }
+
+  @Override
+  protected void closeImplementation() {
+  }
 }
+
