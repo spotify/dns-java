@@ -16,10 +16,15 @@
 
 package com.spotify.dns;
 
+import com.google.common.base.Supplier;
 import com.google.common.collect.Sets;
 
 import java.util.Arrays;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
+
+import static com.google.common.base.Preconditions.checkNotNull;
+import static com.spotify.dns.ChangeNotifierFactory.RunnableChangeNotifier;
 
 public final class ChangeNotifiers {
 
@@ -34,7 +39,7 @@ public final class ChangeNotifiers {
    * records in the input notifiers, before and after the change event.
    *
    * @param notifiers  A list of notifiers to aggregate
-   * @param <T> The record type
+   * @param <T>        The record type
    * @return A notifier with the described behaviour
    */
   public static <T> ChangeNotifier<T> aggregate(ChangeNotifier<T>... notifiers) {
@@ -54,7 +59,7 @@ public final class ChangeNotifiers {
    * if they are attached with the {@code fire} argument set to {@code true}.
    *
    * @param records  The records that the notifier will contain
-   * @param <T> The record type
+   * @param <T>      The record type
    * @return A notifier with a static set of records
    */
   public static <T> ChangeNotifier<T> staticRecords(T... records) {
@@ -63,5 +68,37 @@ public final class ChangeNotifiers {
 
   public static <T> ChangeNotifier<T> staticRecords(Set<T> records) {
     return new StaticChangeNotifier<T>(records);
+  }
+
+  /**
+   * Create a {@link RunnableChangeNotifier} that directly wraps a set of records given by a
+   * {@link Supplier}.
+   *
+   * <p>Each call to {@link Runnable#run()} will cause the supplier to be polled and regular
+   * change notifications to be triggered.
+   *
+   * <p>This implementation is useful for testing components that depend on a
+   * {@link ChangeNotifier}.
+   *
+   * @param recordsSupplier  The supplier of records
+   * @param <T>              The record type
+   * @return A runnable notifier
+   */
+  public static <T> RunnableChangeNotifier<T> direct(Supplier<Set<T>> recordsSupplier) {
+    return new DirectChangeNotifier<T>(recordsSupplier);
+  }
+
+  public static <T> RunnableChangeNotifier<T> direct(AtomicReference<Set<T>> recordsHolder) {
+    return new DirectChangeNotifier<T>(supplierFromRef(recordsHolder));
+  }
+
+  private static <T> Supplier<Set<T>> supplierFromRef(final AtomicReference<Set<T>> ref) {
+    checkNotNull(ref, "ref");
+    return new Supplier<Set<T>>() {
+      @Override
+      public Set<T> get() {
+        return ref.get();
+      }
+    };
   }
 }
