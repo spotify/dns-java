@@ -22,8 +22,6 @@ import com.google.common.collect.ImmutableSet;
 import java.util.List;
 import java.util.Set;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 /**
  * A {@link ChangeNotifier} that aggregates the records provided by a list of notifiers.
  */
@@ -39,7 +37,7 @@ class AggregatingChangeNotifier<T> extends AbstractChangeNotifier<T> {
    * @param changeNotifiers the notifiers to aggregate
    */
   AggregatingChangeNotifier(final List<ChangeNotifier<T>> changeNotifiers) {
-    this.changeNotifiers = ImmutableList.copyOf(checkNotNull(changeNotifiers));
+    this.changeNotifiers = ImmutableList.copyOf(changeNotifiers);
 
     // Set up forwarding of listeners
     for (final ChangeNotifier<T> changeNotifier : this.changeNotifiers) {
