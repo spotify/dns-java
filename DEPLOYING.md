@@ -16,6 +16,6 @@ Once you've got that in place, you should be able to do deployment using the fol
 mvn clean deploy
 
 # make and deploy a relase
-mvn release:clean release:prepare
+mvn release:clean release:prepare -P release
 mvn release:perform
 ```
