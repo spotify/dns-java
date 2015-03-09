@@ -36,7 +36,7 @@ class AggregatingChangeNotifier<T> extends AbstractChangeNotifier<T> {
    *
    * @param changeNotifiers the notifiers to aggregate
    */
-  AggregatingChangeNotifier(final List<ChangeNotifier<T>> changeNotifiers) {
+  AggregatingChangeNotifier(final Iterable<ChangeNotifier<T>> changeNotifiers) {
     this.changeNotifiers = ImmutableList.copyOf(changeNotifiers);
 
     // Set up forwarding of listeners

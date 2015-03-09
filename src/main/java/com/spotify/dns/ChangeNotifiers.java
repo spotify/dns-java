@@ -19,6 +19,7 @@ package com.spotify.dns;
 import com.google.common.collect.Sets;
 
 import java.util.Arrays;
+import java.util.Set;
 
 public final class ChangeNotifiers {
 
@@ -37,7 +38,11 @@ public final class ChangeNotifiers {
    * @return A notifier with the described behaviour
    */
   public static <T> ChangeNotifier<T> aggregate(ChangeNotifier<T>... notifiers) {
-    return new AggregatingChangeNotifier<T>(Arrays.asList(notifiers));
+    return aggregate(Arrays.asList(notifiers));
+  }
+
+  public static <T> ChangeNotifier<T> aggregate(Iterable<ChangeNotifier<T>> notifiers) {
+    return new AggregatingChangeNotifier<T>(notifiers);
   }
 
   /**
@@ -53,6 +58,10 @@ public final class ChangeNotifiers {
    * @return A notifier with a static set of records
    */
   public static <T> ChangeNotifier<T> staticRecords(T... records) {
-    return new StaticChangeNotifier<T>(Sets.newHashSet(records));
+    return staticRecords(Sets.newHashSet(records));
+  }
+
+  public static <T> ChangeNotifier<T> staticRecords(Set<T> records) {
+    return new StaticChangeNotifier<T>(records);
   }
 }
