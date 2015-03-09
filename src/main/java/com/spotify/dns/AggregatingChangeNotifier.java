@@ -19,7 +19,6 @@ package com.spotify.dns;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
@@ -32,7 +31,7 @@ class AggregatingChangeNotifier<T> extends AbstractChangeNotifier<T> {
 
   private final List<ChangeNotifier<T>> changeNotifiers;
 
-  private volatile Set<T> records = Collections.emptySet();
+  private volatile Set<T> records = ImmutableSet.of();
 
   /**
    * Create a new aggregating {@link ChangeNotifier}.
@@ -52,11 +51,23 @@ class AggregatingChangeNotifier<T> extends AbstractChangeNotifier<T> {
        }, false);
     }
 
-    records = current();
+    records = aggregateSet();
+  }
+
+  @Override
+  public Set<T> current() {
+    return records;
+  }
+
+  @Override
+  protected void closeImplementation() {
+    for (ChangeNotifier<T> provider : changeNotifiers) {
+      provider.close();
+    }
   }
 
   private synchronized void checkChange() {
-    Set<T> currentRecords = current();
+    Set<T> currentRecords = aggregateSet();
 
     if (!currentRecords.equals(records)) {
       final ChangeNotification<T> changeNotification =
@@ -67,20 +78,12 @@ class AggregatingChangeNotifier<T> extends AbstractChangeNotifier<T> {
     }
   }
 
-  @Override
-  public Set<T> current() {
+  private Set<T> aggregateSet() {
     ImmutableSet.Builder<T> records = ImmutableSet.builder();
     for (final ChangeNotifier<T> changeNotifier : changeNotifiers) {
       records.addAll(changeNotifier.current());
     }
     return records.build();
-  }
-
-  @Override
-  protected void closeImplementation() {
-    for (ChangeNotifier<T> provider : changeNotifiers) {
-      provider.close();
-    }
   }
 }
 
