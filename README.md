@@ -12,9 +12,9 @@ DnsSrvResolvers.DnsSrvResolverBuilder.
 ## Watching for Changes
 
 It's often useful to update where you try to connect based on changes in lookup results, and this library
-provides functionality that allows you to get notified when things change by implementing this interface (defined in the [ChangeNotifier](src/main/java/com/spotify/dns/ChangeNotifier.java) class):
+provides functionality that allows you to get notified when things change by implementing this interface (defined in the [ChangeNotifier](src/main/java/com/spotify/dns/ChangeNotifier.java) interface):
 
-```
+```java
   interface Listener<T> {
 
     /**
