@@ -9,6 +9,33 @@ Sometimes it is useful to default to previously returned, cached values, if a dn
 or return an empty result. This behavior is controlled by the retainingDataOnFailures() method in
 DnsSrvResolvers.DnsSrvResolverBuilder.
 
+## Watching for Changes
+
+It's often useful to update where you try to connect based on changes in lookup results, and this library
+provides functionality that allows you to get notified when things change by implementing this interface (defined in the [ChangeNotifier](src/main/java/com/spotify/dns/ChangeNotifier.java) class):
+
+```
+  interface Listener<T> {
+
+    /**
+     * Signal that set of records changed.
+     *
+     * @param changeNotification An object containing details about the change
+     */
+    void onChange(ChangeNotification<T> changeNotification);
+  }
+
+  /**
+   * A change event containing the current and previous set of records.
+   */
+  interface ChangeNotification<T> {
+    Set<T> current();
+    Set<T> previous();
+  }
+```
+
+Take a look  at the [PollingUsage example](src/test/java/com/spotify/dns/examples/PollingUsage.java) for an example.
+
 ## Metrics
 
 If you have a statistics system that can be integrated with using the munin protocol, the method
