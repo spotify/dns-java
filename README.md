@@ -59,12 +59,12 @@ For example code, have a look at
 [PollingUsage example](src/test/java/com/spotify/dns/examples/PollingUsage.java)
 
 To include the latest released version in your maven project, do:
-```
-    <dependency>
-      <groupId>com.spotify</groupId>
-      <artifactId>dns</artifactId>
-      <version>3.0.0</version>
-    </dependency>
+```xml
+  <dependency>
+    <groupId>com.spotify</groupId>
+    <artifactId>dns</artifactId>
+    <version>3.0.0</version>
+  </dependency>
 ```
 
 ## License
