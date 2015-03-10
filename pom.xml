@@ -185,6 +185,7 @@
                             <autoVersionSubmodules>true</autoVersionSubmodules>
                             <useReleaseProfile>false</useReleaseProfile>
                             <releaseProfiles>release</releaseProfiles>
+                            <pushChanges>false</pushChanges>
                             <goals>deploy</goals>
                         </configuration>
                     </plugin>
