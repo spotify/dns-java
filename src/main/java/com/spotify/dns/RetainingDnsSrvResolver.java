@@ -23,8 +23,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static com.google.common.base.MoreObjects.firstNonNull;
-
 /**
  * A caching DnsSrvResolver that keeps track of the previous results of a particular query. If
  * available, the previous result is returned in case of a failure, or if a query that used to
@@ -45,13 +43,15 @@ class RetainingDnsSrvResolver implements DnsSrvResolver {
     Preconditions.checkNotNull(fqdn, "fqdn");
 
     try {
-      List<LookupResult> nodes = delegate.resolve(fqdn);
+      final List<LookupResult> nodes = delegate.resolve(fqdn);
 
+      // No nodes resolved? Return stale data.
       if (nodes.isEmpty()) {
-        nodes = firstNonNull(cache.get(fqdn), nodes);
-      } else {
-        cache.put(fqdn, nodes);
+        List<LookupResult> first = cache.get(fqdn);
+        return (first != null) ? first : nodes;
       }
+
+      cache.put(fqdn, nodes);
 
       return nodes;
     } catch (Exception e) {
