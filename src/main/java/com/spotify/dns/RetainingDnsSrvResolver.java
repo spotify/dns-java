@@ -47,8 +47,8 @@ class RetainingDnsSrvResolver implements DnsSrvResolver {
 
       // No nodes resolved? Return stale data.
       if (nodes.isEmpty()) {
-        List<LookupResult> first = cache.get(fqdn);
-        return (first != null) ? first : nodes;
+        List<LookupResult> cached = cache.get(fqdn);
+        return (cached != null) ? cached : nodes;
       }
 
       cache.put(fqdn, nodes);
