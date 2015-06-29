@@ -63,7 +63,7 @@ To include the latest released version in your maven project, do:
   <dependency>
     <groupId>com.spotify</groupId>
     <artifactId>dns</artifactId>
-    <version>3.0.1</version>
+    <version>3.0.2</version>
   </dependency>
 ```
 
