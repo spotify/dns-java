@@ -21,7 +21,9 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Collections;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.ReentrantLock;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -34,18 +36,25 @@ abstract class AbstractChangeNotifier<T> implements ChangeNotifier<T> {
 
   private final AtomicReference<Listener<T>> listenerRef = new AtomicReference<Listener<T>>();
 
+  private final AtomicBoolean listenerNotified = new AtomicBoolean(false);
+
+  private ReentrantLock lock = new ReentrantLock();
+
   @Override
   public void setListener(final Listener<T> listener, final boolean fire) {
     checkNotNull(listener, "listener");
 
-    synchronized (this) {
-      if (!listenerRef.compareAndSet(null, listener)) {
+    lock.lock();
+    try {
+          if (!listenerRef.compareAndSet(null, listener)) {
         throw new IllegalStateException("Listener already set!");
       }
 
       if (fire) {
-        fireRecordsUpdated(newChangeNotification(current(), Collections.<T>emptySet()));
+        notifyListener(newChangeNotification(current(), Collections.<T>emptySet()), true);
       }
+    } finally {
+      lock.unlock();
     }
   }
 
@@ -58,15 +67,34 @@ abstract class AbstractChangeNotifier<T> implements ChangeNotifier<T> {
   protected abstract void closeImplementation();
 
   protected final void fireRecordsUpdated(ChangeNotification<T> changeNotification) {
-    checkNotNull(changeNotification, "changeNotification");
+    notifyListener(changeNotification, false);
+  }
 
-    final Listener<T> listener = listenerRef.get();
-    if (listener != null) {
-      try {
-        listener.onChange(changeNotification);
-      } catch (Throwable e) {
-        log.error("Change notification lister threw exception", e);
+  /**
+   * Notify the listener about a change. If this is due to adding a new listener rather than
+   * being an update, only notify the listener if this is the first notification sent to it.
+   *
+   * @param changeNotification the change notification to send
+   * @param newListener call is triggered by adding a listener rather than an update
+   */
+  private void notifyListener(ChangeNotification<T> changeNotification, boolean newListener) {
+    lock.lock();
+    try {
+      checkNotNull(changeNotification, "changeNotification");
+
+      final Listener<T> listener = listenerRef.get();
+      if (listener != null) {
+        try {
+          final boolean notified = listenerNotified.getAndSet(true);
+          if (!(newListener && notified)) {
+            listener.onChange(changeNotification);
+          }
+        } catch (Throwable e) {
+          log.error("Change notification lister threw exception", e);
+        }
       }
+    }finally {
+      lock.unlock();
     }
   }
 
