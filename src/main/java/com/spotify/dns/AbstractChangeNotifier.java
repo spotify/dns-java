@@ -38,7 +38,7 @@ abstract class AbstractChangeNotifier<T> implements ChangeNotifier<T> {
 
   private final AtomicBoolean listenerNotified = new AtomicBoolean(false);
 
-  private ReentrantLock lock = new ReentrantLock();
+  private final ReentrantLock lock = new ReentrantLock();
 
   @Override
   public void setListener(final Listener<T> listener, final boolean fire) {
@@ -90,10 +90,10 @@ abstract class AbstractChangeNotifier<T> implements ChangeNotifier<T> {
             listener.onChange(changeNotification);
           }
         } catch (Throwable e) {
-          log.error("Change notification lister threw exception", e);
+          log.error("Change notification listener threw exception", e);
         }
       }
-    }finally {
+    } finally {
       lock.unlock();
     }
   }
