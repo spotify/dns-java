@@ -11,28 +11,27 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.empty;
-import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.is;
 
 public class DnsSrvWatchersTest {
 
   @Test
-  public void triggerRace() throws Exception {
-    int limit = 100000;
+  public void noRaceBetweenSetListenerAndPollingForUpdates() throws Exception {
+    int limit = 20000;
     while (limit-- > 0) {
-      System.out.println(limit);
       resolve();
     }
   }
 
   private void resolve() throws Exception {
-    final DnsSrvResolver srvResolver = new MockResolver(
+    final DnsSrvResolver srvResolver = new FakeResolver(
         "horse.sto3.spotify.net", LookupResult.create("localhost", 1, 0, 0, 0));
 
     final AtomicReference<Set<LookupResult>> hosts = new AtomicReference<Set<LookupResult>>();
     final CountDownLatch latch = new CountDownLatch(1);
 
-    final ChangeNotifier.Listener<LookupResult> listener = new MockListener(hosts, latch);
+    final ChangeNotifier.Listener<LookupResult> listener = new FakeListener(hosts, latch);
 
     DnsSrvWatcher<LookupResult> watcher = DnsSrvWatchers.newBuilder(srvResolver)
         .polling(1, TimeUnit.MILLISECONDS)
@@ -44,15 +43,15 @@ public class DnsSrvWatchersTest {
     latch.await();
     notifier.close();
     watcher.close();
-    assertThat(hosts.get(), not(empty()));
+    assertThat(hosts.get(), contains(is(LookupResult.create("localhost", 1, 0, 0, 0))));
   }
 
-  static class MockListener implements ChangeNotifier.Listener<LookupResult> {
+  static class FakeListener implements ChangeNotifier.Listener<LookupResult> {
 
     private final AtomicReference<Set<LookupResult>> hosts;
     private final CountDownLatch latch;
 
-    MockListener(AtomicReference<Set<LookupResult>> hosts, CountDownLatch latch) {
+    FakeListener(AtomicReference<Set<LookupResult>> hosts, CountDownLatch latch) {
       this.hosts = hosts;
       this.latch = latch;
     }
@@ -68,12 +67,12 @@ public class DnsSrvWatchersTest {
     }
   }
 
-  static class MockResolver implements DnsSrvResolver {
+  static class FakeResolver implements DnsSrvResolver {
 
     private final String fqdn;
     private final LookupResult result;
 
-    public MockResolver(String fqdn, LookupResult result) {
+    public FakeResolver(String fqdn, LookupResult result) {
       this.fqdn = fqdn;
       this.result = result;
     }
