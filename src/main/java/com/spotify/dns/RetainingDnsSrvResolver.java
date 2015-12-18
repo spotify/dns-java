@@ -16,9 +16,11 @@
 
 package com.spotify.dns;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Throwables;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -27,11 +29,15 @@ import java.util.concurrent.ConcurrentHashMap;
  * A caching DnsSrvResolver that keeps track of the previous results of a particular query. If
  * available, the previous result is returned in case of a failure, or if a query that used to
  * return valid data starts returning empty results. The purpose is to provide protection against
- * transient failures in the DNS infrastructure.
+ * transient failures in the DNS infrastructure. The cached result is persisted for two hours.
  */
 class RetainingDnsSrvResolver implements DnsSrvResolver {
+  public final static long VALID_CACHE_LIFETIME = 1000 * 60 * 60 * 2;  // 2 hrs
+
   private final DnsSrvResolver delegate;
   private final Map<String, List<LookupResult>> cache;
+
+  private Date lastValidResultDate;
 
   RetainingDnsSrvResolver(DnsSrvResolver delegate) {
     this.delegate = Preconditions.checkNotNull(delegate, "delegate");
@@ -45,15 +51,17 @@ class RetainingDnsSrvResolver implements DnsSrvResolver {
     try {
       final List<LookupResult> nodes = delegate.resolve(fqdn);
 
-      // No nodes resolved? Return stale data.
+      // No nodes resolved? Return stale data if the cache is still valid.
       if (nodes.isEmpty()) {
-        List<LookupResult> cached = cache.get(fqdn);
-        return (cached != null) ? cached : nodes;
+        final Date now = new Date();
+        final List<LookupResult> cached = cache.get(fqdn);
+        return (cached != null && now.getTime() - lastValidResultDate.getTime() < VALID_CACHE_LIFETIME)
+            ? cached : nodes;
+      } else {
+        lastValidResultDate = new Date();
+        cache.put(fqdn, nodes);
+        return nodes;
       }
-
-      cache.put(fqdn, nodes);
-
-      return nodes;
     } catch (Exception e) {
       if (cache.containsKey(fqdn)) {
         return cache.get(fqdn);
@@ -61,5 +69,10 @@ class RetainingDnsSrvResolver implements DnsSrvResolver {
 
       throw Throwables.propagate(e);
     }
+  }
+
+  @VisibleForTesting
+  void setLastValidResultDate(final Date date) {
+    lastValidResultDate = date;
   }
 }
