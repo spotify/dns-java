@@ -16,6 +16,7 @@
 
 package com.spotify.dns;
 
+import org.hamcrest.CoreMatchers;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -32,6 +33,7 @@ import static org.mockito.Mockito.when;
 
 public class RetainingDnsSrvResolverTest {
   private static final String FQDN = "heythere";
+  private static final long RETENTION_TIME_MILLIS = 50L;
 
   RetainingDnsSrvResolver resolver;
 
@@ -47,7 +49,7 @@ public class RetainingDnsSrvResolverTest {
   public void setUp() throws Exception {
     delegate = mock(DnsSrvResolver.class);
 
-    resolver = new RetainingDnsSrvResolver(delegate);
+    resolver = new RetainingDnsSrvResolver(delegate, RETENTION_TIME_MILLIS);
 
     nodes1 = nodes("noden1", "noden2");
     nodes2 = nodes("noden3", "noden5", "somethingelse");
@@ -112,10 +114,50 @@ public class RetainingDnsSrvResolverTest {
         .thenReturn(nodes())
         .thenThrow(new DnsException("expected"));
 
+    resolver.resolve(FQDN);
+
     thrown.expect(DnsException.class);
     thrown.expectMessage("expected");
 
     resolver.resolve(FQDN);
+  }
+
+  @Test
+  public void shouldNotRetainPastEndOfRetentionOnEmptyResults() throws Exception {
+    when(delegate.resolve(FQDN))
+        .thenReturn(nodes("aresult"))
+        .thenReturn(nodes());
+
     resolver.resolve(FQDN);
+
+    // expire retained entry
+    Thread.sleep(RETENTION_TIME_MILLIS);
+
+    assertThat(resolver.resolve(FQDN).isEmpty(), is(true));
+  }
+
+  @Test
+  public void shouldNotRetainPastEndOfRetentionOnException() throws Exception {
+    DnsException expected = new DnsException("expected");
+    when(delegate.resolve(FQDN))
+        .thenReturn(nodes("aresult"))
+        .thenThrow(expected);
+
+    resolver.resolve(FQDN);
+
+    // expire retained entry
+    Thread.sleep(RETENTION_TIME_MILLIS);
+
+    thrown.expect(equalTo(expected));
+
+    resolver.resolve(FQDN);
+  }
+
+  @Test
+  public void shouldThrowIfRetentionNegative() throws Exception {
+    thrown.expect(IllegalArgumentException.class);
+    thrown.expectMessage("-4787");
+
+    new RetainingDnsSrvResolver(delegate, -4787);
   }
 }
