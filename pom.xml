@@ -3,7 +3,7 @@
 
     <groupId>com.spotify</groupId>
     <artifactId>dns</artifactId>
-    <packaging>jar</packaging>
+    <packaging>bundle</packaging>
     <version>3.0.3-SNAPSHOT</version>
     <name>Spotify DNS wrapper library</name>
     <description>A thin wrapper around dnsjava for some features related to SRV lookups.
@@ -18,7 +18,7 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <guava.version>11.0.2</guava.version>
+        <guava.version>12.0</guava.version>
     </properties>
 
     <scm>
@@ -211,6 +211,35 @@
                         </configuration>
                         <goals>
                             <goal>enforce</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.felix</groupId>
+                <artifactId>maven-bundle-plugin</artifactId>
+                <version>3.0.1</version>
+                <extensions>true</extensions>
+                <configuration>
+                    <instructions>
+                        <Bundle-Name>${project.name}</Bundle-Name>
+                        <Bundle-SymbolicName>${project.groupId}.${project.artifactId}</Bundle-SymbolicName>
+                        <Export-Package>
+                            com.spotify.dns;-noimport:=true,
+                            com.spotify.dns.statistics;-noimport:=true
+                        </Export-Package>
+                        <Implementation-Title>${project.name}</Implementation-Title>
+                        <Implementation-Version>${project.version}</Implementation-Version>
+                    </instructions>
+                </configuration>
+                <executions>
+                    <!--
+                      This execution makes sure that the manifest is available
+                      when the tests are executed
+                    -->
+                    <execution>
+                        <goals>
+                            <goal>manifest</goal>
                         </goals>
                     </execution>
                 </executions>
