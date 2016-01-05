@@ -21,12 +21,13 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
+import java.util.Date;
 import java.util.List;
 
 import static com.spotify.dns.DnsTestUtil.nodes;
-import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -39,6 +40,19 @@ public class RetainingDnsSrvResolverTest {
 
   List<LookupResult> nodes1;
   List<LookupResult> nodes2;
+  List<LookupResult> nodesEmpty;
+
+  private void invalidateCacheDate() {
+    final Date now = new Date();
+    final Date outOfDate = new Date(now.getTime() - RetainingDnsSrvResolver.VALID_CACHE_LIFETIME);
+    resolver.setLastValidResultDate(outOfDate);
+  }
+
+  private void updateCacheDate() {
+    final Date now = new Date();
+    final Date outOfDate = new Date(now.getTime() - RetainingDnsSrvResolver.VALID_CACHE_LIFETIME + 1);
+    resolver.setLastValidResultDate(outOfDate);
+  }
 
   @Rule
   public ExpectedException thrown = ExpectedException.none();
@@ -49,33 +63,75 @@ public class RetainingDnsSrvResolverTest {
 
     resolver = new RetainingDnsSrvResolver(delegate);
 
+    nodesEmpty = nodes();
     nodes1 = nodes("noden1", "noden2");
     nodes2 = nodes("noden3", "noden5", "somethingelse");
   }
 
   @Test
-  public void shouldReturnResultsFromDelegate() throws Exception {
-    when(delegate.resolve(FQDN)).thenReturn(nodes1);
+  public void shouldReturnEmptyWhenDelegateResolveEmptyAndCacheIsEmpty() throws Exception {
+    when(delegate.resolve(FQDN)).thenReturn(nodesEmpty);
+    assertTrue(resolver.resolve(FQDN).isEmpty());
+  }
 
+  @Test
+  public void shouldReturnEmptyWhenDelegateResolveEmptyAndCacheIsOutOfDate() throws Exception {
+    when(delegate.resolve(FQDN)).thenReturn(nodes1).thenReturn(nodesEmpty);
+
+    resolver.resolve(FQDN);
+    invalidateCacheDate();
+
+    assertTrue(resolver.resolve(FQDN).isEmpty());
+  }
+
+  @Test
+  public void shouldReturnCachedResultWhenDelegateResolveEmptyAndCacheIsValid() throws Exception {
+    when(delegate.resolve(FQDN)).thenReturn(nodes1).thenReturn(nodesEmpty);
+
+    resolver.resolve(FQDN);
+    updateCacheDate();
+
+    assertThat(resolver.resolve(FQDN), equalTo(nodes1));
+  }
+
+  @Test
+  public void shouldReturnResultWhenDelegateResolveResultAndCacheIsEmpty() throws Exception {
+    when(delegate.resolve(FQDN)).thenReturn(nodes1);
     assertThat(resolver.resolve(FQDN), equalTo(nodes1));
   }
 
   @Test
   public void shouldReturnResultsFromDelegateEachTime() throws Exception {
     when(delegate.resolve(FQDN)).thenReturn(nodes1).thenReturn(nodes2);
-
     resolver.resolve(FQDN);
-
     assertThat(resolver.resolve(FQDN), equalTo(nodes2));
   }
 
   @Test
   public void shouldRetainDataIfNewResultEmpty() throws Exception {
-    when(delegate.resolve(FQDN)).thenReturn(nodes1).thenReturn(nodes());
+    when(delegate.resolve(FQDN)).thenReturn(nodes1).thenReturn(nodesEmpty);
+    resolver.resolve(FQDN);
+    assertThat(resolver.resolve(FQDN), equalTo(nodes1));
+  }
+
+  @Test
+  public void shouldReturnLatestResultWhenDelegateResolveResultAndCacheIsOutOfDate() throws Exception {
+    when(delegate.resolve(FQDN)).thenReturn(nodes1).thenReturn(nodes2);
 
     resolver.resolve(FQDN);
+    invalidateCacheDate();
 
-    assertThat(resolver.resolve(FQDN), equalTo(nodes1));
+    assertThat(resolver.resolve(FQDN), equalTo(nodes2));
+  }
+
+  @Test
+  public void shouldReturnLatestResultWhenDelegateResolveResultAndCacheIsValid() throws Exception {
+    when(delegate.resolve(FQDN)).thenReturn(nodes1).thenReturn(nodes2);
+
+    resolver.resolve(FQDN);
+    updateCacheDate();
+
+    assertThat(resolver.resolve(FQDN), equalTo(nodes2));
   }
 
   @Test
@@ -100,16 +156,9 @@ public class RetainingDnsSrvResolverTest {
   }
 
   @Test
-  public void shouldReturnEmptyOnEmptyAndNoDataAvailable() throws Exception {
-    when(delegate.resolve(FQDN)).thenReturn(nodes());
-
-    assertThat(resolver.resolve(FQDN).isEmpty(), is(true));
-  }
-
-  @Test
   public void shouldNotStoreEmptyResults() throws Exception {
     when(delegate.resolve(FQDN))
-        .thenReturn(nodes())
+        .thenReturn(nodesEmpty)
         .thenThrow(new DnsException("expected"));
 
     thrown.expect(DnsException.class);
