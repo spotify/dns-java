@@ -4,7 +4,7 @@
     <groupId>com.spotify</groupId>
     <artifactId>dns</artifactId>
     <packaging>bundle</packaging>
-    <version>3.0.3-SNAPSHOT</version>
+    <version>3.1.0</version>
     <name>Spotify DNS wrapper library</name>
     <description>A thin wrapper around dnsjava for some features related to SRV lookups.
     </description>
@@ -25,7 +25,7 @@
         <url>git@github.com:spotify/dns-java.git</url>
         <connection>scm:git:git@github.com:spotify/dns-java.git</connection>
         <developerConnection>scm:git:git@github.com:spotify/dns-java.git</developerConnection>
-        <tag>HEAD</tag>
+        <tag>v3.1.0</tag>
     </scm>
 
     <licenses>
