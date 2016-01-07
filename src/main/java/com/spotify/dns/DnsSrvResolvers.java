@@ -21,6 +21,7 @@ import com.spotify.dns.statistics.DnsReporter;
 import org.xbill.DNS.Lookup;
 
 import static com.google.common.primitives.Ints.checkedCast;
+import static java.util.concurrent.TimeUnit.HOURS;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
@@ -30,6 +31,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 public final class DnsSrvResolvers {
 
   private static final int DEFAULT_DNS_TIMEOUT_SECONDS = 5;
+  private static final int DEFAULT_RETENTION_DURATION_HOURS = 2;
 
   public static DnsSrvResolverBuilder newBuilder() {
     return new DnsSrvResolverBuilder();
@@ -41,20 +43,27 @@ public final class DnsSrvResolvers {
     private final boolean retainData;
     private final boolean cacheLookups;
     private final long dnsLookupTimeoutMillis;
+    private final long retentionDurationMillis;
 
     private DnsSrvResolverBuilder() {
-      this(null, false, false, SECONDS.toMillis(DEFAULT_DNS_TIMEOUT_SECONDS));
+      this(null,
+           false,
+           false,
+           SECONDS.toMillis(DEFAULT_DNS_TIMEOUT_SECONDS),
+           HOURS.toMillis(DEFAULT_RETENTION_DURATION_HOURS));
     }
 
     private DnsSrvResolverBuilder(
         DnsReporter reporter,
         boolean retainData,
         boolean cacheLookups,
-        long dnsLookupTimeoutMillis) {
+        long dnsLookupTimeoutMillis,
+        long retentionDurationMillis) {
       this.reporter = reporter;
       this.retainData = retainData;
       this.cacheLookups = cacheLookups;
       this.dnsLookupTimeoutMillis = dnsLookupTimeoutMillis;
+      this.retentionDurationMillis = retentionDurationMillis;
     }
 
     public DnsSrvResolver build() {
@@ -80,26 +89,35 @@ public final class DnsSrvResolvers {
       }
 
       if (retainData) {
-        result = new RetainingDnsSrvResolver(result);
+        result = new RetainingDnsSrvResolver(result, -1L);
       }
 
       return result;
     }
 
     public DnsSrvResolverBuilder metered(DnsReporter reporter) {
-      return new DnsSrvResolverBuilder(reporter, retainData, cacheLookups, dnsLookupTimeoutMillis);
+      return new DnsSrvResolverBuilder(reporter, retainData, cacheLookups, dnsLookupTimeoutMillis,
+                                       retentionDurationMillis);
     }
 
     public DnsSrvResolverBuilder retainingDataOnFailures(boolean retainData) {
-      return new DnsSrvResolverBuilder(reporter, retainData, cacheLookups, dnsLookupTimeoutMillis);
+      return new DnsSrvResolverBuilder(reporter, retainData, cacheLookups, dnsLookupTimeoutMillis,
+                                       retentionDurationMillis);
     }
 
     public DnsSrvResolverBuilder cachingLookups(boolean cacheLookups) {
-      return new DnsSrvResolverBuilder(reporter, retainData, cacheLookups, dnsLookupTimeoutMillis);
+      return new DnsSrvResolverBuilder(reporter, retainData, cacheLookups, dnsLookupTimeoutMillis,
+                                       retentionDurationMillis);
     }
 
     public DnsSrvResolverBuilder dnsLookupTimeoutMillis(long dnsLookupTimeoutMillis) {
-      return new DnsSrvResolverBuilder(reporter, retainData, cacheLookups, dnsLookupTimeoutMillis);
+      return new DnsSrvResolverBuilder(reporter, retainData, cacheLookups, dnsLookupTimeoutMillis,
+                                       retentionDurationMillis);
+    }
+
+    public DnsSrvResolverBuilder retentionDurationMillis(long retentionDurationMillis) {
+      return new DnsSrvResolverBuilder(reporter, retainData, cacheLookups, dnsLookupTimeoutMillis,
+                                       retentionDurationMillis);
     }
   }
 

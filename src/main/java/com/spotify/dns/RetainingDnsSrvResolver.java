@@ -18,24 +18,30 @@ package com.spotify.dns;
 
 import com.google.common.base.Preconditions;
 import com.google.common.base.Throwables;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 
 /**
- * A caching DnsSrvResolver that keeps track of the previous results of a particular query. If
+ * A DnsSrvResolver that keeps track of the previous results of a particular query. If
  * available, the previous result is returned in case of a failure, or if a query that used to
  * return valid data starts returning empty results. The purpose is to provide protection against
- * transient failures in the DNS infrastructure.
+ * transient failures in the DNS infrastructure. Data is retained for a configurable period of time.
  */
 class RetainingDnsSrvResolver implements DnsSrvResolver {
   private final DnsSrvResolver delegate;
-  private final Map<String, List<LookupResult>> cache;
+  private final Cache<String, List<LookupResult>> cache;
 
-  RetainingDnsSrvResolver(DnsSrvResolver delegate) {
+  RetainingDnsSrvResolver(DnsSrvResolver delegate, long retentionTimeMillis) {
+    Preconditions.checkArgument(retentionTimeMillis > 0L,
+                                "retention time must be positive, was %d",retentionTimeMillis);
+
     this.delegate = Preconditions.checkNotNull(delegate, "delegate");
-    cache = new ConcurrentHashMap<String, List<LookupResult>>();
+    cache = CacheBuilder.newBuilder()
+        .expireAfterWrite(retentionTimeMillis, TimeUnit.MILLISECONDS)
+        .build();
   }
 
   @Override
@@ -47,7 +53,7 @@ class RetainingDnsSrvResolver implements DnsSrvResolver {
 
       // No nodes resolved? Return stale data.
       if (nodes.isEmpty()) {
-        List<LookupResult> cached = cache.get(fqdn);
+        List<LookupResult> cached = cache.getIfPresent(fqdn);
         return (cached != null) ? cached : nodes;
       }
 
@@ -55,8 +61,8 @@ class RetainingDnsSrvResolver implements DnsSrvResolver {
 
       return nodes;
     } catch (Exception e) {
-      if (cache.containsKey(fqdn)) {
-        return cache.get(fqdn);
+      if (cache.getIfPresent(fqdn) != null) {
+        return cache.getIfPresent(fqdn);
       }
 
       throw Throwables.propagate(e);
