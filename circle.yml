@@ -1,0 +1,11 @@
+machine:
+  environment:
+    _JAVA_OPTIONS: "-Xms512m -Xmx2024m"
+
+test:
+  override:
+    - mvn -Pcoverage verify
+  post:
+    - mvn org.eluder.coveralls:coveralls-maven-plugin:report -Dcoveralls.token=$COVERALLS_TOKEN
+    - mkdir -p $CIRCLE_TEST_REPORTS/junit/
+    - find . -type f -regex ".*/target/surefire-reports/.*xml" -exec cp {} $CIRCLE_TEST_REPORTS/junit/ \;

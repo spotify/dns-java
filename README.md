@@ -1,3 +1,8 @@
+[![Circle Status](https://circleci.com/gh/spotify/dns-java.svg?style=shield&circle-token=5a9eb086ae3cec87e62fc8b6cdeb783cb318e3b9)](https://circleci.com/gh/spotify/dns-java)
+[![Coverage Status](https://coveralls.io/repos/spotify/dns-java/badge.svg?branch=master&service=github)](https://coveralls.io/github/spotify/dns-java?branch=master)
+[![Maven Central](https://img.shields.io/maven-central/v/com.spotify/dns-java.svg)](https://search.maven.org/#search%7Cga%7C1%7Cg%3A%22com.spotify%22%20dns-java*)
+[![License](https://img.shields.io/github/license/spotify/dns-java.svg)](LICENSE)
+
 spotify-dns-java
 ================
 
