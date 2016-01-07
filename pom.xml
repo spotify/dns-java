@@ -244,6 +244,37 @@
                     </execution>
                 </executions>
             </plugin>
+            <plugin>
+                <groupId>com.github.siom79.japicmp</groupId>
+                <artifactId>japicmp-maven-plugin</artifactId>
+                <version>0.6.1</version>
+                <configuration>
+                    <oldVersion>
+                        <dependency>
+                            <groupId>com.spotify</groupId>
+                            <artifactId>${project.artifactId}</artifactId>
+                            <version>3.0.2</version>
+                        </dependency>
+                    </oldVersion>
+                    <newVersion>
+                        <file>
+                            <path>${project.build.directory}/${project.artifactId}-${project.version}.jar</path>
+                        </file>
+                    </newVersion>
+                    <parameter>
+                        <breakBuildOnBinaryIncompatibleModifications>true</breakBuildOnBinaryIncompatibleModifications>
+                        <onlyBinaryIncompatible>true</onlyBinaryIncompatible>
+                    </parameter>
+                </configuration>
+                <executions>
+                    <execution>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>cmp</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
 </project>
