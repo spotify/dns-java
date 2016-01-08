@@ -69,9 +69,11 @@ To include the latest released version in your maven project, do:
   <dependency>
     <groupId>com.spotify</groupId>
     <artifactId>dns</artifactId>
-    <version>3.0.2</version>
+    <version>3.1.1</version>
   </dependency>
 ```
+
+NOTE: version 3.1.0 is broken; you cannot use the retention feature in that version.
 
 ## License
 
