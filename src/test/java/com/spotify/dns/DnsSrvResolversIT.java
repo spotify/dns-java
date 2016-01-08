@@ -25,6 +25,7 @@ import org.junit.Test;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.isA;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -71,6 +72,19 @@ public class DnsSrvResolversIT {
     }
     catch (DnsException e) {
       assertThat(e.getMessage(), containsString("host not found"));
+    }
+  }
+
+  @Test
+  public void shouldSucceedCreatingRetainingDnsResolver() throws Exception {
+    try {
+      resolver = DnsSrvResolvers.newBuilder().retainingDataOnFailures(true).build();
+    }
+    catch (DnsException e) {
+      assertTrue("DNS exception should not be thrown", false);
+    }
+    catch (IllegalArgumentException e) {
+      assertTrue("Illegal argument exception should not be thrown", false);
     }
   }
 
