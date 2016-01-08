@@ -89,7 +89,7 @@ public final class DnsSrvResolvers {
       }
 
       if (retainData) {
-        result = new RetainingDnsSrvResolver(result, -1L);
+        result = new RetainingDnsSrvResolver(result, retentionDurationMillis);
       }
 
       return result;
