@@ -81,7 +81,10 @@ public class DnsSrvResolversIT {
       resolver = DnsSrvResolvers.newBuilder().retainingDataOnFailures(true).build();
     }
     catch (DnsException e) {
-      assertTrue(false);
+      assertTrue("DNS exception should not be thrown", false);
+    }
+    catch (IllegalArgumentException e) {
+      assertTrue("Illegal argument exception should not be thrown", false);
     }
   }
 
