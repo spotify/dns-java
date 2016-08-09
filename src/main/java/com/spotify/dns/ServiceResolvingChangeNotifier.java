@@ -101,11 +101,11 @@ class ServiceResolvingChangeNotifier<T> extends AbstractChangeNotifier<T>
         errorHandler.handle(fqdn, e);
       }
       log.error(e.getMessage(), e);
-      fireEmpty();
+      fireIfFirstError();
       return;
     } catch (Exception e) {
       log.error(e.getMessage(), e);
-      fireEmpty();
+      fireIfFirstError();
       return;
     }
 
@@ -119,7 +119,7 @@ class ServiceResolvingChangeNotifier<T> extends AbstractChangeNotifier<T>
       current = builder.build();
     } catch (Exception e) {
       log.error(e.getMessage(), e);
-      fireEmpty();
+      fireIfFirstError();
       return;
     }
 
@@ -133,7 +133,7 @@ class ServiceResolvingChangeNotifier<T> extends AbstractChangeNotifier<T>
     }
   }
 
-  private void fireEmpty() {
+  private void fireIfFirstError() {
     if (waitingForFirstEvent) {
       waitingForFirstEvent = false;
       fireRecordsUpdated(newChangeNotification(current(), current()));

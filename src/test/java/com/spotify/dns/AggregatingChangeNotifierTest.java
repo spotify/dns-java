@@ -26,6 +26,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 public class AggregatingChangeNotifierTest {
   @Test
@@ -41,6 +42,7 @@ public class AggregatingChangeNotifierTest {
     childNotifier.set(ImmutableSet.<String>of());
 
     verify(listener, times(1)).onChange(any(ChangeNotifier.ChangeNotification.class));
+    verifyNoMoreInteractions(listener);
 
   }
 
