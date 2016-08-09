@@ -47,6 +47,7 @@ class ServiceResolvingChangeNotifier<T> extends AbstractChangeNotifier<T>
   private final ErrorHandler errorHandler;
 
   private volatile Set<T> records = ImmutableSet.of();
+  private volatile boolean waitingForFirstEvent = true;
 
   private volatile boolean run = true;
 
@@ -100,9 +101,11 @@ class ServiceResolvingChangeNotifier<T> extends AbstractChangeNotifier<T>
         errorHandler.handle(fqdn, e);
       }
       log.error(e.getMessage(), e);
+      fireIfFirstError();
       return;
     } catch (Exception e) {
       log.error(e.getMessage(), e);
+      fireIfFirstError();
       return;
     }
 
@@ -116,15 +119,24 @@ class ServiceResolvingChangeNotifier<T> extends AbstractChangeNotifier<T>
       current = builder.build();
     } catch (Exception e) {
       log.error(e.getMessage(), e);
+      fireIfFirstError();
       return;
     }
 
-    if (!current.equals(records)) {
+    if (waitingForFirstEvent || !current.equals(records)) {
+      waitingForFirstEvent = false;
       final ChangeNotification<T> changeNotification =
           newChangeNotification(current, records);
       records = current;
 
       fireRecordsUpdated(changeNotification);
+    }
+  }
+
+  private void fireIfFirstError() {
+    if (waitingForFirstEvent) {
+      waitingForFirstEvent = false;
+      fireRecordsUpdated(newChangeNotification(current(), current()));
     }
   }
 }

@@ -18,7 +18,6 @@ package com.spotify.dns;
 
 import com.spotify.dns.statistics.DnsReporter;
 import com.spotify.dns.statistics.DnsTimingContext;
-
 import org.junit.Before;
 import org.junit.Test;
 
@@ -29,6 +28,7 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.isA;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -62,7 +62,7 @@ public class DnsSrvResolversIT {
     resolver.resolve("_spotify-client._tcp.sto.spotify.net");
     verify(timingReporter).stop();
     verify(reporter, never()).reportFailure(isA(RuntimeException.class));
-    verify(reporter, never()).reportEmpty();
+    verify(reporter, times(1)).reportEmpty();
   }
 
   @Test

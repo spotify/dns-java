@@ -30,6 +30,7 @@ class AggregatingChangeNotifier<T> extends AbstractChangeNotifier<T> {
   private final List<ChangeNotifier<T>> changeNotifiers;
 
   private volatile Set<T> records = ImmutableSet.of();
+  private volatile boolean waitingForFirstEvent = true;
 
   /**
    * Create a new aggregating {@link ChangeNotifier}.
@@ -67,7 +68,8 @@ class AggregatingChangeNotifier<T> extends AbstractChangeNotifier<T> {
   private synchronized void checkChange() {
     Set<T> currentRecords = aggregateSet();
 
-    if (!currentRecords.equals(records)) {
+    if (waitingForFirstEvent || !currentRecords.equals(records)) {
+      waitingForFirstEvent = false;
       final ChangeNotification<T> changeNotification =
           newChangeNotification(currentRecords, records);
       records = currentRecords;
