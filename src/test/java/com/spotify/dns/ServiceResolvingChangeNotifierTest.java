@@ -205,6 +205,7 @@ public class ServiceResolvingChangeNotifierTest {
     sut.setListener(listener, false);
     sut.run();
 
+    verify(listener, times(1)).onChange(any(ChangeNotifier.ChangeNotification.class));
     verifyNoMoreInteractions(listener);
   }
 
@@ -224,6 +225,7 @@ public class ServiceResolvingChangeNotifierTest {
 
     verify(errorHandler).handle(FQDN, exception);
     verifyNoMoreInteractions(f);
+    verify(listener, times(1)).onChange(any(ChangeNotifier.ChangeNotification.class));
     verifyNoMoreInteractions(listener);
   }
 

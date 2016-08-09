@@ -29,6 +29,7 @@ class DirectChangeNotifier<T> extends AbstractChangeNotifier<T>
   private final Supplier<Set<T>> recordsSupplier;
 
   private volatile Set<T> records = ImmutableSet.of();
+  private volatile boolean waitingForFirstEvent = true;
   private volatile boolean run = true;
 
   public DirectChangeNotifier(Supplier<Set<T>> recordsSupplier) {
@@ -52,7 +53,8 @@ class DirectChangeNotifier<T> extends AbstractChangeNotifier<T>
     }
 
     final Set<T> current = recordsSupplier.get();
-    if (!current.equals(records)) {
+    if (waitingForFirstEvent || !current.equals(records)) {
+      waitingForFirstEvent = false;
       final ChangeNotification<T> changeNotification =
           newChangeNotification(current, records);
       records = current;
