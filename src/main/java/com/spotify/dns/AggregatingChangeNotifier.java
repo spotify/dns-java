@@ -29,8 +29,7 @@ class AggregatingChangeNotifier<T> extends AbstractChangeNotifier<T> {
 
   private final List<ChangeNotifier<T>> changeNotifiers;
 
-  private volatile Set<T> records = ImmutableSet.of();
-  private volatile boolean waitingForFirstEvent = true;
+  private volatile Set<T> records = ChangeNotifiers.initialEmptyDataInstance();
 
   /**
    * Create a new aggregating {@link ChangeNotifier}.
@@ -68,8 +67,7 @@ class AggregatingChangeNotifier<T> extends AbstractChangeNotifier<T> {
   private synchronized void checkChange() {
     Set<T> currentRecords = aggregateSet();
 
-    if (waitingForFirstEvent || !currentRecords.equals(records)) {
-      waitingForFirstEvent = false;
+    if (ChangeNotifiers.isNoLongerInitial(currentRecords, records) || !currentRecords.equals(records)) {
       final ChangeNotification<T> changeNotification =
           newChangeNotification(currentRecords, records);
       records = currentRecords;
@@ -79,11 +77,24 @@ class AggregatingChangeNotifier<T> extends AbstractChangeNotifier<T> {
   }
 
   private Set<T> aggregateSet() {
+    if (areAllInitial(changeNotifiers)) {
+      return ChangeNotifiers.initialEmptyDataInstance();
+    }
+
     ImmutableSet.Builder<T> records = ImmutableSet.builder();
     for (final ChangeNotifier<T> changeNotifier : changeNotifiers) {
       records.addAll(changeNotifier.current());
     }
     return records.build();
+  }
+
+  private boolean areAllInitial(List<ChangeNotifier<T>> changeNotifiers) {
+    for (final ChangeNotifier<T> changeNotifier : changeNotifiers) {
+      if (!ChangeNotifiers.isInitialEmptyData(changeNotifier.current())) {
+        return false;
+      }
+    }
+    return true;
   }
 }
 

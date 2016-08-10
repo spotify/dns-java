@@ -16,13 +16,23 @@
 
 package com.spotify.dns;
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
+import com.jayway.awaitility.Awaitility;
 import com.spotify.dns.statistics.DnsReporter;
 import com.spotify.dns.statistics.DnsTimingContext;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.concurrent.TimeUnit;
+
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.isA;
@@ -46,7 +56,35 @@ public class DnsSrvResolversIT {
 
   @Test
   public void shouldReturnResultsForValidQuery() throws Exception {
-    assertThat(resolver.resolve("_spotify-client._tcp.sto.spotify.net").isEmpty(), is(false));
+    assertThat(resolver.resolve("_spotify-client._tcp.spotify.com").isEmpty(), is(false));
+  }
+
+  @Test
+  public void testCorrectSequenceOfNotifications() throws Exception {
+    ChangeNotifier<LookupResult> notifier = ChangeNotifiers.aggregate(
+        DnsSrvWatchers.newBuilder(resolver)
+            .polling(100, TimeUnit.MILLISECONDS)
+            .build().watch("_spotify-client._tcp.spotify.com"));
+
+    final List<String> changes = Collections.synchronizedList(Lists.<String>newArrayList());
+
+    notifier.setListener(new ChangeNotifier.Listener<LookupResult>() {
+      @Override
+      public void onChange(ChangeNotifier.ChangeNotification<LookupResult> changeNotification) {
+        Set<LookupResult> current = changeNotification.current();
+        if (!ChangeNotifiers.isInitialEmptyData(current)) {
+          changes.add(current.isEmpty() ? "empty" : "data");
+        }
+      }
+    }, true);
+    assertEquals(ImmutableList.of(), changes);
+    Awaitility.await().atMost(2, TimeUnit.SECONDS).until(new Callable<Boolean>() {
+      @Override
+      public Boolean call() throws Exception {
+        return changes.size() >= 1;
+      }
+    });
+    assertEquals(ImmutableList.of("data"), changes);
   }
 
   @Test

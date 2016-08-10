@@ -17,7 +17,6 @@
 package com.spotify.dns;
 
 import com.google.common.base.Supplier;
-import com.google.common.collect.ImmutableSet;
 
 import java.util.Set;
 
@@ -28,8 +27,7 @@ class DirectChangeNotifier<T> extends AbstractChangeNotifier<T>
 
   private final Supplier<Set<T>> recordsSupplier;
 
-  private volatile Set<T> records = ImmutableSet.of();
-  private volatile boolean waitingForFirstEvent = true;
+  private volatile Set<T> records = ChangeNotifiers.initialEmptyDataInstance();
   private volatile boolean run = true;
 
   public DirectChangeNotifier(Supplier<Set<T>> recordsSupplier) {
@@ -53,8 +51,7 @@ class DirectChangeNotifier<T> extends AbstractChangeNotifier<T>
     }
 
     final Set<T> current = recordsSupplier.get();
-    if (waitingForFirstEvent || !current.equals(records)) {
-      waitingForFirstEvent = false;
+    if (ChangeNotifiers.isNoLongerInitial(current, records) || !current.equals(records)) {
       final ChangeNotification<T> changeNotification =
           newChangeNotification(current, records);
       records = current;
@@ -62,4 +59,5 @@ class DirectChangeNotifier<T> extends AbstractChangeNotifier<T>
       fireRecordsUpdated(changeNotification);
     }
   }
+
 }

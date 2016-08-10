@@ -94,6 +94,21 @@
             <version>1.7.5</version>
             <scope>test</scope>
         </dependency>
+
+        <dependency>
+            <groupId>com.jayway.awaitility</groupId>
+            <artifactId>awaitility</artifactId>
+            <version>1.7.0</version>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- Need explicit dependency on this to avoid conflict between awaitility and mockito -->
+        <dependency>
+            <groupId>org.objenesis</groupId>
+            <artifactId>objenesis</artifactId>
+            <version>2.1</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <distributionManagement>
