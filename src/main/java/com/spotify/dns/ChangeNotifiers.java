@@ -20,6 +20,8 @@ import com.google.common.base.Supplier;
 import com.google.common.collect.Sets;
 
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -28,7 +30,35 @@ import static com.spotify.dns.ChangeNotifierFactory.RunnableChangeNotifier;
 
 public final class ChangeNotifiers {
 
+  /**
+   * Ensure that we get a unique empty set that you can't create any other way
+   * (i.e. ImmutableSet.of() always returns the same instance).
+   *
+   * This is needed to distinguishing the initial state of change notifiers from
+   * when they have gotten proper data.
+   */
+  private static final Set INITIAL_EMPTY_DATA = Collections.unmodifiableSet(new HashSet());
+
   private ChangeNotifiers() {
+  }
+
+  /**
+   * Use this to determine if the data you get back from a notifier is the initial result of the result of a proper
+   * DNS lookup. This is useful for distinguishing a proper but empty DNS result from the case
+   * where a lookup has not completed yet.
+   * @param set
+   * @return true if the input is an initially empty set.
+   */
+  public static <T> boolean isInitialEmptyData(Set<T> set) {
+    return set == INITIAL_EMPTY_DATA;
+  }
+
+  static <T> Set<T> initialEmptyDataInstance() {
+    return INITIAL_EMPTY_DATA;
+  }
+
+  static <T> boolean isNoLongerInitial(Set<T> current, Set<T> previous) {
+    return isInitialEmptyData(previous) && !isInitialEmptyData(current);
   }
 
   /**

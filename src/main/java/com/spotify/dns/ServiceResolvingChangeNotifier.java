@@ -18,14 +18,12 @@ package com.spotify.dns;
 
 import com.google.common.base.Function;
 import com.google.common.collect.ImmutableSet;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Set;
-
-import javax.annotation.Nullable;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -46,7 +44,7 @@ class ServiceResolvingChangeNotifier<T> extends AbstractChangeNotifier<T>
   @Nullable
   private final ErrorHandler errorHandler;
 
-  private volatile Set<T> records = ImmutableSet.of();
+  private volatile Set<T> records = ChangeNotifiers.initialEmptyDataInstance();
   private volatile boolean waitingForFirstEvent = true;
 
   private volatile boolean run = true;
@@ -123,7 +121,8 @@ class ServiceResolvingChangeNotifier<T> extends AbstractChangeNotifier<T>
       return;
     }
 
-    if (waitingForFirstEvent || !current.equals(records)) {
+    if (ChangeNotifiers.isNoLongerInitial(current, records) || !current.equals(records)) {
+      // This means that any subsequent DNS error will be ignored and the existing result will be kept
       waitingForFirstEvent = false;
       final ChangeNotification<T> changeNotification =
           newChangeNotification(current, records);
@@ -136,7 +135,9 @@ class ServiceResolvingChangeNotifier<T> extends AbstractChangeNotifier<T>
   private void fireIfFirstError() {
     if (waitingForFirstEvent) {
       waitingForFirstEvent = false;
-      fireRecordsUpdated(newChangeNotification(current(), current()));
+      Set<T> previous = current();
+      records = ImmutableSet.of();
+      fireRecordsUpdated(newChangeNotification(records, previous));
     }
   }
 }

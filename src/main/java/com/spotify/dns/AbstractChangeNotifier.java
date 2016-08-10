@@ -16,6 +16,7 @@
 
 package com.spotify.dns;
 
+import com.google.common.collect.ImmutableSet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -117,12 +118,22 @@ abstract class AbstractChangeNotifier<T> implements ChangeNotifier<T> {
 
     @Override
     public Set<T> current() {
-      return Collections.unmodifiableSet(current);
+      return unmodifiable(current);
+    }
+
+    private Set<T> unmodifiable(Set<T> set) {
+      if (ChangeNotifiers.isInitialEmptyData(set)) {
+        return set;
+      }
+      if (set instanceof ImmutableSet) {
+        return set;
+      }
+      return Collections.unmodifiableSet(set);
     }
 
     @Override
     public Set<T> previous() {
-      return Collections.unmodifiableSet(previous);
+      return unmodifiable(previous);
     }
   }
 }

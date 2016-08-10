@@ -24,7 +24,6 @@ import java.util.Set;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
@@ -40,14 +39,12 @@ public class AggregatingChangeNotifierTest {
     verify(listener, never()).onChange(any(ChangeNotifier.ChangeNotification.class));
 
     childNotifier.set(ImmutableSet.<String>of());
-
-    verify(listener, times(1)).onChange(any(ChangeNotifier.ChangeNotification.class));
     verifyNoMoreInteractions(listener);
 
   }
 
   private static class MyNotifier extends AbstractChangeNotifier<String> {
-    private volatile Set<String> records = ImmutableSet.of();
+    private volatile Set<String> records = ChangeNotifiers.initialEmptyDataInstance();
 
     @Override
     protected void closeImplementation() {
