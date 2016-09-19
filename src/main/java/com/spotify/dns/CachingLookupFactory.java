@@ -19,6 +19,7 @@ package com.spotify.dns;
 import com.google.common.base.Preconditions;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import com.google.common.util.concurrent.UncheckedExecutionException;
 
 import org.xbill.DNS.Lookup;
 
@@ -57,6 +58,8 @@ class CachingLookupFactory implements LookupFactory {
           }
       );
     } catch (ExecutionException e) {
+      throw new DnsException(e);
+    } catch (UncheckedExecutionException e) {
       throw new DnsException(e);
     }
   }
