@@ -37,6 +37,12 @@ public class NoCachingLookupFactoryTest {
         Mockito.verify(delegate).forName(Mockito.eq("some.domain."));
     }
 
+    @Test
+    public void shouldNotAllowNullDelegate() throws Exception {
+        thrown.expect(NullPointerException.class);
+        thrown.expectMessage("Delegate lookup factory cannot be null");
+        new NoCachingLookupFactory(null);
+    }
 
     @Test
     public void shouldPropagateWhenErrorOnDelegate() throws Exception {

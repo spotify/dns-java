@@ -20,7 +20,7 @@ import com.google.common.base.Preconditions;
 import org.xbill.DNS.*;
 
 /**
- * A LookupFactory that always returns new instances and setting the lookup to not use the cache
+ * A LookupFactory that delegates the creation of a lookup then forcing it to not use the cache
  */
 public class NoCachingLookupFactory implements LookupFactory {
 
