@@ -16,6 +16,7 @@
 
 package com.spotify.dns;
 
+import com.google.common.base.Preconditions;
 import org.xbill.DNS.*;
 
 /**
@@ -23,14 +24,16 @@ import org.xbill.DNS.*;
  */
 public class NoCachingLookupFactory implements LookupFactory {
 
+  private final LookupFactory delegate;
+
+  public NoCachingLookupFactory(LookupFactory delegate) {
+      this.delegate = Preconditions.checkNotNull(delegate, "Delegate lookup factory cannot be null");
+  }
+
   @Override
   public Lookup forName(String fqdn) {
-    try {
-      Lookup lookup = new Lookup(fqdn, Type.SRV, DClass.IN);
-      lookup.setCache(null);
-      return lookup;
-    } catch (TextParseException e) {
-      throw new DnsException("unable to create lookup for name: " + fqdn, e);
-    }
+    Lookup lookup = delegate.forName(fqdn);
+    lookup.setCache(null);
+    return lookup;
   }
 }

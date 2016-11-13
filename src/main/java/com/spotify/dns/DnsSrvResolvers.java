@@ -80,7 +80,11 @@ public final class DnsSrvResolvers {
 
       Lookup.getDefaultResolver().setTimeout(timeoutSecs, millisRemainder);
 
-      LookupFactory lookupFactory = useLookupCache ? new SimpleLookupFactory() : new NoCachingLookupFactory();
+      LookupFactory lookupFactory = new SimpleLookupFactory();
+
+      if (!useLookupCache) {
+          lookupFactory = new NoCachingLookupFactory(lookupFactory);
+      }
 
       if (cacheLookups) {
         lookupFactory = new CachingLookupFactory(lookupFactory);
