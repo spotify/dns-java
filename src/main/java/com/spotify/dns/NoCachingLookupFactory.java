@@ -17,23 +17,24 @@
 package com.spotify.dns;
 
 import com.google.common.base.Preconditions;
-import org.xbill.DNS.*;
+import org.xbill.DNS.Lookup;
+
 
 /**
  * A LookupFactory that delegates the creation of a lookup then forcing it to not use the cache
  */
 public class NoCachingLookupFactory implements LookupFactory {
 
-  private final LookupFactory delegate;
+    private final LookupFactory delegate;
 
-  public NoCachingLookupFactory(LookupFactory delegate) {
-      this.delegate = Preconditions.checkNotNull(delegate, "Delegate lookup factory cannot be null");
-  }
+    public NoCachingLookupFactory(LookupFactory delegate) {
+        this.delegate = Preconditions.checkNotNull(delegate, "Delegate lookup factory cannot be null");
+    }
 
-  @Override
-  public Lookup forName(String fqdn) {
-    Lookup lookup = delegate.forName(fqdn);
-    lookup.setCache(null);
-    return lookup;
-  }
+    @Override
+    public Lookup forName(String fqdn) {
+        Lookup lookup = delegate.forName(fqdn);
+        lookup.setCache(null);
+        return lookup;
+    }
 }
