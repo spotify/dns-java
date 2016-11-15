@@ -1,6 +1,6 @@
 package com.spotify.dns;
 
-import org.junit.Before;
+import com.google.common.base.Throwables;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -8,17 +8,15 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.runners.MockitoJUnitRunner;
-import org.xbill.DNS.DClass;
 import org.xbill.DNS.Lookup;
+import org.xbill.DNS.Message;
+import org.xbill.DNS.Record;
+import org.xbill.DNS.Resolver;
+import org.xbill.DNS.DClass;
 import org.xbill.DNS.Type;
-
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.notNullValue;
-import static org.junit.Assert.assertThat;
 
 @RunWith(MockitoJUnitRunner.class)
 public class NoCachingLookupFactoryTest {
-    NoCachingLookupFactory factory;
 
     @Rule
     public ExpectedException thrown = ExpectedException.none();
@@ -26,18 +24,36 @@ public class NoCachingLookupFactoryTest {
     @Mock
     LookupFactory delegate;
 
-    @Before
-    public void setUp() throws Exception {
-        factory = new NoCachingLookupFactory(delegate);
-    }
-
     @Test
-    public void shouldCallDelegate() throws Exception {
-        Mockito.when(delegate.forName(Mockito.anyString())).thenReturn(new Lookup("some.domain.", Type.SRV, DClass.IN));
+    public void shouldCallDelegateTwiceWhenResolvingADomainTwice() throws Exception {
+        String fdn = "_spotify-client._tcp.spotify.com.";
 
-        assertThat(factory.forName("some.domain."), is(notNullValue()));
+        final Resolver resolver = Mockito.mock(Resolver.class);
 
-        Mockito.verify(delegate).forName(Mockito.eq("some.domain."));
+        // Lets fetch one record just to save some mocking code
+        Record someRecord = new SimpleLookupFactory().forName(fdn).run()[0];
+
+        Mockito.when(resolver.send(Mockito.any(Message.class))).thenReturn(Message.newQuery(someRecord));
+
+        delegate = new LookupFactory() {
+            @Override
+            public Lookup forName(String fqdn) {
+                try {
+                    Lookup lookupResult = new Lookup(fqdn, Type.SRV, DClass.IN);
+                    lookupResult.setResolver(resolver);
+                    return lookupResult;
+                } catch (Exception e) {
+                    throw Throwables.propagate(e);
+                }
+            }
+        };
+
+        NoCachingLookupFactory factory = new NoCachingLookupFactory(delegate);
+
+        factory.forName(fdn).run();
+        factory.forName(fdn).run();
+
+        Mockito.verify(resolver, Mockito.times(2)).send(Mockito.any(Message.class));
     }
 
     @Test
@@ -52,6 +68,6 @@ public class NoCachingLookupFactoryTest {
         Mockito.when(delegate.forName(Mockito.anyString())).thenThrow(new RuntimeException("Error resolving"));
         thrown.expect(RuntimeException.class);
         thrown.expectMessage("Error resolving");
-        factory.forName("some.domain.");
+        new NoCachingLookupFactory(delegate).forName("some.domain.");
     }
 }
