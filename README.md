@@ -15,6 +15,11 @@ fail or return an empty result. This behavior is controlled by the ```retainingD
 and  ```retentionDurationMillis(long)``` methods in
 [DnsSrvResolvers.DnsSrvResolverBuilder](src/main/java/com/spotify/dns/DnsSrvResolvers.java).
 
+## Disabling caching
+
+Sometimes it is useful to not rely on the `ttl` declared on the records (For example, for faster notification of changes).
+This could be achieved, by using the ```useLookupCache(boolean)``` and ```cachingLookups(boolean)``` method in [DnsSrvResolvers.DnsSrvResolverBuilder](src/main/java/com/spotify/dns/DnsSrvResolvers.java), by setting both to `false`.
+
 ## Watching for Changes
 
 It's often useful to update where you try to connect based on changes in lookup results, and this library
