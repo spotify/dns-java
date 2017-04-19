@@ -126,6 +126,11 @@ public class DnsSrvResolversIT {
     }
   }
 
+    @Test
+    public void shouldSucceedCreatingNotUsingLookupCache() throws Exception {
+        DnsSrvResolvers.newBuilder().useLookupCache(false).build();
+    }
+
   // TODO: it would be nice to be able to also test things like intermittent DNS failures, etc.,
   // but that takes a lot of work setting up a DNS infrastructure that can be made to fail in a
   // controlled way, so I'm skipping that.
