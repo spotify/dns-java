@@ -97,8 +97,10 @@ class ServiceResolvingChangeNotifier<T> extends AbstractChangeNotifier<T>
     } catch (DnsException e) {
       if (errorHandler != null) {
         errorHandler.handle(fqdn, e);
+        log.warn(e.getMessage(), e);
+      } else {
+        log.error(e.getMessage(), e);
       }
-      log.error(e.getMessage(), e);
       fireIfFirstError();
       return;
     } catch (Exception e) {
