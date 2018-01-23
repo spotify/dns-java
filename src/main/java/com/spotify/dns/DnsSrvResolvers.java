@@ -16,14 +16,16 @@
 
 package com.spotify.dns;
 
-import com.spotify.dns.statistics.DnsReporter;
-
-import org.xbill.DNS.Lookup;
-
 import static com.google.common.primitives.Ints.checkedCast;
 import static java.util.concurrent.TimeUnit.HOURS;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
+
+import com.spotify.dns.statistics.DnsReporter;
+import java.net.UnknownHostException;
+import java.util.List;
+import org.xbill.DNS.ExtendedResolver;
+import org.xbill.DNS.Resolver;
 
 /**
  * Provides builders for configuring and instantiating {@link DnsSrvResolver}s.
@@ -44,13 +46,15 @@ public final class DnsSrvResolvers {
     private final boolean cacheLookups;
     private final long dnsLookupTimeoutMillis;
     private final long retentionDurationMillis;
+    private final List<String> servers;
 
     private DnsSrvResolverBuilder() {
       this(null,
            false,
            false,
            SECONDS.toMillis(DEFAULT_DNS_TIMEOUT_SECONDS),
-           HOURS.toMillis(DEFAULT_RETENTION_DURATION_HOURS));
+           HOURS.toMillis(DEFAULT_RETENTION_DURATION_HOURS),
+           null);
     }
 
     private DnsSrvResolverBuilder(
@@ -58,25 +62,35 @@ public final class DnsSrvResolvers {
         boolean retainData,
         boolean cacheLookups,
         long dnsLookupTimeoutMillis,
-        long retentionDurationMillis) {
+        long retentionDurationMillis,
+        List<String> servers) {
       this.reporter = reporter;
       this.retainData = retainData;
       this.cacheLookups = cacheLookups;
       this.dnsLookupTimeoutMillis = dnsLookupTimeoutMillis;
       this.retentionDurationMillis = retentionDurationMillis;
+      this.servers = servers;
     }
 
     public DnsSrvResolver build() {
-      // NOTE: this sucks, but is the only reasonably sane way to set a timeout in dnsjava...
-      // the effect of doing this is to set a global timeout for all Lookup instances - except
-      // those that potentially get a new Resolver assigned via the setResolver method... Since
-      // Lookup instances are mostly encapsulated in this library, we should be fine.
+      Resolver resolver;
+      try {
+        // If the user specified DNS servers, create a new ExtendedResolver which uses them.
+        // Otherwise, use the default constructor. That will use the servers in ResolverConfig,
+        // or if that's empty, localhost.
+        resolver = servers == null ?
+                   new ExtendedResolver() :
+                   new ExtendedResolver(servers.toArray(new String[servers.size()]));
+      } catch (UnknownHostException e) {
+        throw new RuntimeException(e);
+      }
+
+      // Configure the Resolver to use our timeouts.
       int timeoutSecs = checkedCast(MILLISECONDS.toSeconds(dnsLookupTimeoutMillis));
       int millisRemainder = checkedCast(dnsLookupTimeoutMillis - SECONDS.toMillis(timeoutSecs));
+      resolver.setTimeout(timeoutSecs, millisRemainder);
 
-      Lookup.getDefaultResolver().setTimeout(timeoutSecs, millisRemainder);
-
-      LookupFactory lookupFactory = new SimpleLookupFactory();
+      LookupFactory lookupFactory = new SimpleLookupFactory(resolver);
 
       if (cacheLookups) {
         lookupFactory = new CachingLookupFactory(lookupFactory);
@@ -97,27 +111,41 @@ public final class DnsSrvResolvers {
 
     public DnsSrvResolverBuilder metered(DnsReporter reporter) {
       return new DnsSrvResolverBuilder(reporter, retainData, cacheLookups, dnsLookupTimeoutMillis,
-                                       retentionDurationMillis);
+                                       retentionDurationMillis, servers);
     }
 
     public DnsSrvResolverBuilder retainingDataOnFailures(boolean retainData) {
       return new DnsSrvResolverBuilder(reporter, retainData, cacheLookups, dnsLookupTimeoutMillis,
-                                       retentionDurationMillis);
+                                       retentionDurationMillis, servers);
     }
 
     public DnsSrvResolverBuilder cachingLookups(boolean cacheLookups) {
       return new DnsSrvResolverBuilder(reporter, retainData, cacheLookups, dnsLookupTimeoutMillis,
-                                       retentionDurationMillis);
+                                       retentionDurationMillis, servers);
     }
 
     public DnsSrvResolverBuilder dnsLookupTimeoutMillis(long dnsLookupTimeoutMillis) {
       return new DnsSrvResolverBuilder(reporter, retainData, cacheLookups, dnsLookupTimeoutMillis,
-                                       retentionDurationMillis);
+                                       retentionDurationMillis, servers);
     }
 
     public DnsSrvResolverBuilder retentionDurationMillis(long retentionDurationMillis) {
       return new DnsSrvResolverBuilder(reporter, retainData, cacheLookups, dnsLookupTimeoutMillis,
-                                       retentionDurationMillis);
+                                       retentionDurationMillis, servers);
+    }
+
+    /**
+     * Allows the user to specify which DNS servers should be used to perform DNS lookups. Servers
+     * can be specified using either hostname or IP address. If not specified, the underlying DNS
+     * library will determine which servers to use according to the steps documented in
+     * <a href="https://github.com/dnsjava/dnsjava/blob/master/org/xbill/DNS/ResolverConfig.java">
+     * ResolverConfig.java</a>
+     * @param servers the DNS servers to use
+     * @return this builder
+     */
+    public DnsSrvResolverBuilder servers(List<String> servers) {
+      return new DnsSrvResolverBuilder(reporter, retainData, cacheLookups, dnsLookupTimeoutMillis,
+                                       retentionDurationMillis, servers);
     }
   }
 
