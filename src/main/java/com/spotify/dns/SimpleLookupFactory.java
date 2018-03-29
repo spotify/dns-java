@@ -18,6 +18,7 @@ package com.spotify.dns;
 
 import org.xbill.DNS.DClass;
 import org.xbill.DNS.Lookup;
+import org.xbill.DNS.Resolver;
 import org.xbill.DNS.TextParseException;
 import org.xbill.DNS.Type;
 
@@ -25,10 +26,25 @@ import org.xbill.DNS.Type;
  * A LookupFactory that always returns new instances.
  */
 public class SimpleLookupFactory implements LookupFactory {
+
+  private final Resolver resolver;
+
+  public SimpleLookupFactory() {
+    this(null);
+  }
+
+  public SimpleLookupFactory(Resolver resolver) {
+    this.resolver = resolver;
+  }
+
   @Override
   public Lookup forName(String fqdn) {
     try {
-      return new Lookup(fqdn, Type.SRV, DClass.IN);
+      final Lookup lookup = new Lookup(fqdn, Type.SRV, DClass.IN);
+      if (resolver != null) {
+        lookup.setResolver(resolver);
+      }
+      return lookup;
     } catch (TextParseException e) {
       throw new DnsException("unable to create lookup for name: " + fqdn, e);
     }

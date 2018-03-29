@@ -21,6 +21,7 @@ import com.google.common.collect.Lists;
 import com.jayway.awaitility.Awaitility;
 import com.spotify.dns.statistics.DnsReporter;
 import com.spotify.dns.statistics.DnsTimingContext;
+import java.util.Arrays;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -29,6 +30,9 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
+import org.xbill.DNS.ExtendedResolver;
+import org.xbill.DNS.Lookup;
+import org.xbill.DNS.SimpleResolver;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
@@ -114,6 +118,16 @@ public class DnsSrvResolversIT {
   }
 
   @Test
+  public void shouldReturnResultsUsingSpecifiedServers() throws Exception {
+    final String server = new SimpleResolver().getAddress().getHostName();
+    final DnsSrvResolver resolver = DnsSrvResolvers
+        .newBuilder()
+        .servers(ImmutableList.of(server))
+        .build();
+    assertThat(resolver.resolve("_spotify-client._tcp.spotify.com").isEmpty(), is(false));
+  }
+
+  @Test
   public void shouldSucceedCreatingRetainingDnsResolver() throws Exception {
     try {
       resolver = DnsSrvResolvers.newBuilder().retainingDataOnFailures(true).build();
@@ -125,7 +139,6 @@ public class DnsSrvResolversIT {
       assertTrue("Illegal argument exception should not be thrown", false);
     }
   }
-
   // TODO: it would be nice to be able to also test things like intermittent DNS failures, etc.,
   // but that takes a lot of work setting up a DNS infrastructure that can be made to fail in a
   // controlled way, so I'm skipping that.
