@@ -27,8 +27,6 @@ import org.mockito.MockitoAnnotations;
 
 import java.util.List;
 
-import javax.annotation.Nullable;
-
 import static com.google.common.collect.ImmutableList.of;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.Matchers.containsInAnyOrder;
@@ -235,9 +233,8 @@ public class ServiceResolvingChangeNotifierTest {
 
   private ChangeNotifierFactory.RunnableChangeNotifier<String> createHostNotifier() {
     return createTransformingNotifier(new Function<LookupResult, String>() {
-      @Nullable
       @Override
-      public String apply(@Nullable LookupResult input) {
+      public String apply(LookupResult input) {
         return input != null ? input.host() : null;
       }
     });
