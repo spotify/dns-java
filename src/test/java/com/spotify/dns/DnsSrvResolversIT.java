@@ -16,27 +16,9 @@
 
 package com.spotify.dns;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Lists;
-import com.jayway.awaitility.Awaitility;
-import com.spotify.dns.statistics.DnsReporter;
-import com.spotify.dns.statistics.DnsTimingContext;
-import java.util.Arrays;
-import org.junit.Before;
-import org.junit.Test;
-
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
-import java.util.concurrent.Callable;
-import java.util.concurrent.TimeUnit;
-import org.xbill.DNS.ExtendedResolver;
-import org.xbill.DNS.Lookup;
-import org.xbill.DNS.SimpleResolver;
-
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertEquals;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.isA;
@@ -46,6 +28,19 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.jayway.awaitility.Awaitility;
+import com.spotify.dns.statistics.DnsReporter;
+import com.spotify.dns.statistics.DnsTimingContext;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
+import org.hamcrest.Matchers;
+import org.junit.Before;
+import org.junit.Test;
+import org.xbill.DNS.SimpleResolver;
+
 /**
  * Integration tests for the DnsSrvResolversIT class.
  */
@@ -54,45 +49,37 @@ public class DnsSrvResolversIT {
   private DnsSrvResolver resolver;
 
   @Before
-  public void setUp() throws Exception {
+  public void setUp() {
     resolver = DnsSrvResolvers.newBuilder().build();
   }
 
   @Test
-  public void shouldReturnResultsForValidQuery() throws Exception {
+  public void shouldReturnResultsForValidQuery() {
     assertThat(resolver.resolve("_spotify-client._tcp.spotify.com").isEmpty(), is(false));
   }
 
   @Test
-  public void testCorrectSequenceOfNotifications() throws Exception {
+  public void testCorrectSequenceOfNotifications() {
     ChangeNotifier<LookupResult> notifier = ChangeNotifiers.aggregate(
         DnsSrvWatchers.newBuilder(resolver)
             .polling(100, TimeUnit.MILLISECONDS)
             .build().watch("_spotify-client._tcp.spotify.com"));
 
-    final List<String> changes = Collections.synchronizedList(Lists.<String>newArrayList());
+    final List<String> changes = Collections.synchronizedList(new ArrayList<>());
 
-    notifier.setListener(new ChangeNotifier.Listener<LookupResult>() {
-      @Override
-      public void onChange(ChangeNotifier.ChangeNotification<LookupResult> changeNotification) {
-        Set<LookupResult> current = changeNotification.current();
-        if (!ChangeNotifiers.isInitialEmptyData(current)) {
-          changes.add(current.isEmpty() ? "empty" : "data");
-        }
+    notifier.setListener(changeNotification -> {
+      Set<LookupResult> current = changeNotification.current();
+      if (!ChangeNotifiers.isInitialEmptyData(current)) {
+        changes.add(current.isEmpty() ? "empty" : "data");
       }
     }, true);
-    assertEquals(ImmutableList.of(), changes);
-    Awaitility.await().atMost(2, TimeUnit.SECONDS).until(new Callable<Boolean>() {
-      @Override
-      public Boolean call() throws Exception {
-        return changes.size() >= 1;
-      }
-    });
-    assertEquals(ImmutableList.of("data"), changes);
+    assertThat(changes, Matchers.empty());
+    Awaitility.await().atMost(2, TimeUnit.SECONDS).until(() -> changes.size() >= 1);
+    assertThat(changes, containsInAnyOrder("data"));
   }
 
   @Test
-  public void shouldTrackMetricsWhenToldTo() throws Exception {
+  public void shouldTrackMetricsWhenToldTo() {
     final DnsReporter reporter = mock(DnsReporter.class);
     final DnsTimingContext timingReporter = mock(DnsTimingContext.class);
 
@@ -108,7 +95,7 @@ public class DnsSrvResolversIT {
   }
 
   @Test
-  public void shouldFailForBadHostNames() throws Exception {
+  public void shouldFailForBadHostNames() {
     try {
       resolver.resolve("nonexistenthost");
     }
@@ -122,13 +109,13 @@ public class DnsSrvResolversIT {
     final String server = new SimpleResolver().getAddress().getHostName();
     final DnsSrvResolver resolver = DnsSrvResolvers
         .newBuilder()
-        .servers(ImmutableList.of(server))
+        .servers(List.of(server))
         .build();
     assertThat(resolver.resolve("_spotify-client._tcp.spotify.com").isEmpty(), is(false));
   }
 
   @Test
-  public void shouldSucceedCreatingRetainingDnsResolver() throws Exception {
+  public void shouldSucceedCreatingRetainingDnsResolver() {
     try {
       resolver = DnsSrvResolvers.newBuilder().retainingDataOnFailures(true).build();
     }

@@ -17,7 +17,6 @@
 package com.spotify.dns.examples;
 
 import com.google.common.collect.Sets;
-
 import com.spotify.dns.ChangeNotifier;
 import com.spotify.dns.DnsException;
 import com.spotify.dns.DnsSrvResolver;
@@ -26,7 +25,6 @@ import com.spotify.dns.DnsSrvWatcher;
 import com.spotify.dns.DnsSrvWatchers;
 import com.spotify.dns.ErrorHandler;
 import com.spotify.dns.LookupResult;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;

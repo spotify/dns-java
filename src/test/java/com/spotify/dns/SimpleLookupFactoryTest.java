@@ -16,17 +16,17 @@
 
 package com.spotify.dns;
 
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.isA;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.junit.Assert.assertThat;
+
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.xbill.DNS.Lookup;
 import org.xbill.DNS.TextParseException;
-
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.isA;
-import static org.hamcrest.CoreMatchers.notNullValue;
-import static org.junit.Assert.assertThat;
 
 
 public class SimpleLookupFactoryTest {
@@ -36,17 +36,17 @@ public class SimpleLookupFactoryTest {
   public ExpectedException thrown = ExpectedException.none();
 
   @Before
-  public void setUp() throws Exception {
+  public void setUp() {
     factory = new SimpleLookupFactory();
   }
 
   @Test
-  public void shouldCreateLookups() throws Exception {
+  public void shouldCreateLookups() {
     assertThat(factory.forName("some.domain."), is(notNullValue()));
   }
 
   @Test
-  public void shouldCreateNewLookupsEachTime() throws Exception {
+  public void shouldCreateNewLookupsEachTime() {
     Lookup first = factory.forName("some.other.name.");
     Lookup second = factory.forName("some.other.name.");
 
@@ -54,7 +54,7 @@ public class SimpleLookupFactoryTest {
   }
 
   @Test
-  public void shouldRethrowXBillExceptions() throws Exception {
+  public void shouldRethrowXBillExceptions() {
     thrown.expect(DnsException.class);
     thrown.expectCause(isA(TextParseException.class));
 

@@ -16,21 +16,19 @@
 
 package com.spotify.dns;
 
-import com.spotify.dns.statistics.DnsReporter;
-import com.spotify.dns.statistics.DnsTimingContext;
-
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-
-import java.util.List;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+
+import com.spotify.dns.statistics.DnsReporter;
+import com.spotify.dns.statistics.DnsTimingContext;
+import java.util.List;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 public class MeteredDnsSrvResolverTest {
   private static final String FQDN = "nånting";

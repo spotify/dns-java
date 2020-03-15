@@ -16,20 +16,18 @@
 
 package com.spotify.dns;
 
-import org.junit.Before;
-import org.junit.Test;
-import org.xbill.DNS.Lookup;
-
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import org.junit.Before;
+import org.junit.Test;
+import org.xbill.DNS.Lookup;
 
 public class CachingLookupFactoryTest {
   CachingLookupFactory factory;
@@ -50,14 +48,14 @@ public class CachingLookupFactoryTest {
   }
 
   @Test
-  public void shouldReturnResultsFromDelegate() throws Exception {
+  public void shouldReturnResultsFromDelegate() {
     when(delegate.forName("a name")).thenReturn(lookup);
 
     assertThat(factory.forName("a name"), equalTo(lookup));
   }
 
   @Test
-  public void shouldCacheResultsForSubsequentQueries() throws Exception {
+  public void shouldCacheResultsForSubsequentQueries() {
     when(delegate.forName("hej")).thenReturn(lookup, lookup2);
 
     Lookup first = factory.forName("hej");
@@ -67,7 +65,7 @@ public class CachingLookupFactoryTest {
   }
 
   @Test
-  public void shouldReturnDifferentForDifferentQueries() throws Exception {
+  public void shouldReturnDifferentForDifferentQueries() {
     when(delegate.forName("hej")).thenReturn(lookup);
     when(delegate.forName("hopp")).thenReturn(lookup2);
 
@@ -83,12 +81,7 @@ public class CachingLookupFactoryTest {
     factory = new CachingLookupFactory(new SimpleLookupFactory());
 
     Lookup first = factory.forName("hej");
-    Lookup second = executorService.submit(new Callable<Lookup>() {
-      @Override
-      public Lookup call() throws Exception {
-        return factory.forName("hej");
-      }
-    }).get();
+    Lookup second = executorService.submit(() -> factory.forName("hej")).get();
 
     assertThat(second, not(equalTo(first)));
   }

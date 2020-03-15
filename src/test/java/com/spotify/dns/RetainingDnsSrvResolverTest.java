@@ -16,19 +16,18 @@
 
 package com.spotify.dns;
 
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
-
-import java.util.List;
-
 import static com.spotify.dns.DnsTestUtil.nodes;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+
+import java.util.List;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.ExpectedException;
 
 public class RetainingDnsSrvResolverTest {
   private static final String FQDN = "heythere";
@@ -45,7 +44,7 @@ public class RetainingDnsSrvResolverTest {
   public ExpectedException thrown = ExpectedException.none();
 
   @Before
-  public void setUp() throws Exception {
+  public void setUp() {
     delegate = mock(DnsSrvResolver.class);
 
     resolver = new RetainingDnsSrvResolver(delegate, RETENTION_TIME_MILLIS);
@@ -55,14 +54,14 @@ public class RetainingDnsSrvResolverTest {
   }
 
   @Test
-  public void shouldReturnResultsFromDelegate() throws Exception {
+  public void shouldReturnResultsFromDelegate() {
     when(delegate.resolve(FQDN)).thenReturn(nodes1);
 
     assertThat(resolver.resolve(FQDN), equalTo(nodes1));
   }
 
   @Test
-  public void shouldReturnResultsFromDelegateEachTime() throws Exception {
+  public void shouldReturnResultsFromDelegateEachTime() {
     when(delegate.resolve(FQDN)).thenReturn(nodes1).thenReturn(nodes2);
 
     resolver.resolve(FQDN);
@@ -71,7 +70,7 @@ public class RetainingDnsSrvResolverTest {
   }
 
   @Test
-  public void shouldRetainDataIfNewResultEmpty() throws Exception {
+  public void shouldRetainDataIfNewResultEmpty() {
     when(delegate.resolve(FQDN)).thenReturn(nodes1).thenReturn(nodes());
 
     resolver.resolve(FQDN);
@@ -80,7 +79,7 @@ public class RetainingDnsSrvResolverTest {
   }
 
   @Test
-  public void shouldRetainDataOnFailure() throws Exception {
+  public void shouldRetainDataOnFailure() {
     when(delegate.resolve(FQDN))
         .thenReturn(nodes1)
         .thenThrow(new DnsException("expected"));
@@ -91,7 +90,7 @@ public class RetainingDnsSrvResolverTest {
   }
 
   @Test
-  public void shouldThrowOnFailureAndNoDataAvailable() throws Exception {
+  public void shouldThrowOnFailureAndNoDataAvailable() {
     when(delegate.resolve(FQDN)).thenThrow(new DnsException("expected"));
 
     thrown.expect(DnsException.class);
@@ -101,14 +100,14 @@ public class RetainingDnsSrvResolverTest {
   }
 
   @Test
-  public void shouldReturnEmptyOnEmptyAndNoDataAvailable() throws Exception {
+  public void shouldReturnEmptyOnEmptyAndNoDataAvailable() {
     when(delegate.resolve(FQDN)).thenReturn(nodes());
 
     assertThat(resolver.resolve(FQDN).isEmpty(), is(true));
   }
 
   @Test
-  public void shouldNotStoreEmptyResults() throws Exception {
+  public void shouldNotStoreEmptyResults() {
     when(delegate.resolve(FQDN))
         .thenReturn(nodes())
         .thenThrow(new DnsException("expected"));
@@ -153,7 +152,7 @@ public class RetainingDnsSrvResolverTest {
   }
 
   @Test
-  public void shouldThrowIfRetentionNegative() throws Exception {
+  public void shouldThrowIfRetentionNegative() {
     thrown.expect(IllegalArgumentException.class);
     thrown.expectMessage("-4787");
 
