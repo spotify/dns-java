@@ -41,7 +41,6 @@ class ServiceResolvingChangeNotifier<T> extends AbstractChangeNotifier<T>
 
   private final ErrorHandler errorHandler;
 
-
   private volatile Set<T> records = ChangeNotifiers.initialEmptyDataInstance();
   private volatile boolean waitingForFirstEvent = true;
 
