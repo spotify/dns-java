@@ -77,7 +77,7 @@ public final class DnsSrvWatchers {
   /**
    * @deprecated Use {@link #newBuilder(DnsSrvResolver, java.util.function.Function)}
    */
-  @Deprecated(since = "3.1.6")
+  @Deprecated(since = "3.2.0")
   public static <T> DnsSrvWatcherBuilder<T> newBuilder(
       DnsSrvResolver resolver,
       com.google.common.base.Function<LookupResult, T> resultTransformer) {

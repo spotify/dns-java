@@ -119,7 +119,7 @@ public final class ChangeNotifiers {
   /**
    * @deprecated Use {@link #direct(java.util.function.Supplier)}
    */
-  @Deprecated(since = "3.1.6")
+  @Deprecated(since = "3.2.0")
   public static <T> RunnableChangeNotifier<T> direct(com.google.common.base.Supplier<Set<T>> recordsSupplier) {
     return new DirectChangeNotifier<>(recordsSupplier);
   }
