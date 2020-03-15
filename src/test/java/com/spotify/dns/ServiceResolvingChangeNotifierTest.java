@@ -16,9 +16,7 @@
 
 package com.spotify.dns;
 
-import com.google.common.base.Function;
-import com.google.common.base.Functions;
-
+import java.util.function.Function;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -228,16 +226,11 @@ public class ServiceResolvingChangeNotifierTest {
   }
 
   private ChangeNotifierFactory.RunnableChangeNotifier<LookupResult> createNotifier() {
-    return createTransformingNotifier(Functions.<LookupResult>identity());
+    return createTransformingNotifier(Function.identity());
   }
 
   private ChangeNotifierFactory.RunnableChangeNotifier<String> createHostNotifier() {
-    return createTransformingNotifier(new Function<LookupResult, String>() {
-      @Override
-      public String apply(LookupResult input) {
-        return input != null ? input.host() : null;
-      }
-    });
+    return createTransformingNotifier(input -> input != null ? input.host() : null);
   }
 
   private <T> ChangeNotifierFactory.RunnableChangeNotifier<T> createTransformingNotifier(

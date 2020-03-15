@@ -16,17 +16,15 @@
 
 package com.spotify.dns;
 
-import com.google.common.base.Supplier;
-import com.google.common.collect.Sets;
+import static com.spotify.dns.ChangeNotifierFactory.RunnableChangeNotifier;
+import static java.util.Objects.requireNonNull;
 
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
-
-import static com.google.common.base.Preconditions.checkNotNull;
-import static com.spotify.dns.ChangeNotifierFactory.RunnableChangeNotifier;
+import java.util.function.Supplier;
 
 public final class ChangeNotifiers {
 
@@ -37,7 +35,7 @@ public final class ChangeNotifiers {
    * This is needed to distinguishing the initial state of change notifiers from
    * when they have gotten proper data.
    */
-  private static final Set INITIAL_EMPTY_DATA = Collections.unmodifiableSet(new HashSet());
+  private static final Set INITIAL_EMPTY_DATA = Collections.unmodifiableSet(new HashSet<>());
 
   private ChangeNotifiers() {
   }
@@ -77,7 +75,7 @@ public final class ChangeNotifiers {
   }
 
   public static <T> ChangeNotifier<T> aggregate(Iterable<ChangeNotifier<T>> notifiers) {
-    return new AggregatingChangeNotifier<T>(notifiers);
+    return new AggregatingChangeNotifier<>(notifiers);
   }
 
   /**
@@ -93,11 +91,11 @@ public final class ChangeNotifiers {
    * @return A notifier with a static set of records
    */
   public static <T> ChangeNotifier<T> staticRecords(T... records) {
-    return staticRecords(Sets.newHashSet(records));
+    return staticRecords(Set.of(records));
   }
 
   public static <T> ChangeNotifier<T> staticRecords(Set<T> records) {
-    return new StaticChangeNotifier<T>(records);
+    return new StaticChangeNotifier<>(records);
   }
 
   /**
@@ -115,20 +113,23 @@ public final class ChangeNotifiers {
    * @return A runnable notifier
    */
   public static <T> RunnableChangeNotifier<T> direct(Supplier<Set<T>> recordsSupplier) {
-    return new DirectChangeNotifier<T>(recordsSupplier);
+    return new DirectChangeNotifier<>(recordsSupplier);
+  }
+
+  /**
+   * @deprecated Use {@link #direct(java.util.function.Supplier)}
+   */
+  @Deprecated(since = "3.1.6")
+  public static <T> RunnableChangeNotifier<T> direct(com.google.common.base.Supplier<Set<T>> recordsSupplier) {
+    return new DirectChangeNotifier<>(recordsSupplier);
   }
 
   public static <T> RunnableChangeNotifier<T> direct(AtomicReference<Set<T>> recordsHolder) {
-    return new DirectChangeNotifier<T>(supplierFromRef(recordsHolder));
+    return new DirectChangeNotifier<>(supplierFromRef(recordsHolder));
   }
 
   private static <T> Supplier<Set<T>> supplierFromRef(final AtomicReference<Set<T>> ref) {
-    checkNotNull(ref, "ref");
-    return new Supplier<Set<T>>() {
-      @Override
-      public Set<T> get() {
-        return ref.get();
-      }
-    };
+    requireNonNull(ref, "ref");
+    return ref::get;
   }
 }

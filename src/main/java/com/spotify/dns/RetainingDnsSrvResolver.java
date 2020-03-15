@@ -16,6 +16,8 @@
 
 package com.spotify.dns;
 
+import static java.util.Objects.requireNonNull;
+
 import com.google.common.base.Preconditions;
 import com.google.common.base.Throwables;
 import com.google.common.cache.Cache;
@@ -36,9 +38,9 @@ class RetainingDnsSrvResolver implements DnsSrvResolver {
 
   RetainingDnsSrvResolver(DnsSrvResolver delegate, long retentionTimeMillis) {
     Preconditions.checkArgument(retentionTimeMillis > 0L,
-                                "retention time must be positive, was %d",retentionTimeMillis);
+                                "retention time must be positive, was %d", retentionTimeMillis);
 
-    this.delegate = Preconditions.checkNotNull(delegate, "delegate");
+    this.delegate = requireNonNull(delegate, "delegate");
     cache = CacheBuilder.newBuilder()
         .expireAfterWrite(retentionTimeMillis, TimeUnit.MILLISECONDS)
         .build();
@@ -46,7 +48,7 @@ class RetainingDnsSrvResolver implements DnsSrvResolver {
 
   @Override
   public List<LookupResult> resolve(final String fqdn) {
-    Preconditions.checkNotNull(fqdn, "fqdn");
+    requireNonNull(fqdn, "fqdn");
 
     try {
       final List<LookupResult> nodes = delegate.resolve(fqdn);

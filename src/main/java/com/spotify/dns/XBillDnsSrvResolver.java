@@ -16,7 +16,8 @@
 
 package com.spotify.dns;
 
-import com.google.common.base.Preconditions;
+import static java.util.Objects.requireNonNull;
+
 import com.google.common.collect.ImmutableList;
 
 import org.slf4j.Logger;
@@ -33,11 +34,11 @@ import java.util.List;
  */
 class XBillDnsSrvResolver implements DnsSrvResolver {
   private static final Logger LOG = LoggerFactory.getLogger(XBillDnsSrvResolver.class);
-  
+
   private final LookupFactory lookupFactory;
 
   XBillDnsSrvResolver(LookupFactory lookupFactory) {
-    this.lookupFactory = Preconditions.checkNotNull(lookupFactory, "lookupFactory");
+    this.lookupFactory = requireNonNull(lookupFactory, "lookupFactory");
   }
 
   @Override

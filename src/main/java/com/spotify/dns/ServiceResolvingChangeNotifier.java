@@ -16,12 +16,12 @@
 
 package com.spotify.dns;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
-import com.google.common.base.Function;
 import com.google.common.collect.ImmutableSet;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Function;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -67,9 +67,9 @@ class ServiceResolvingChangeNotifier<T> extends AbstractChangeNotifier<T>
                                  final Function<LookupResult, T> resultTransformer,
                                  final ErrorHandler errorHandler) {
 
-    this.resolver = checkNotNull(resolver);
-    this.fqdn = checkNotNull(fqdn, "fqdn");
-    this.resultTransformer = checkNotNull(resultTransformer, "resultTransformer");
+    this.resolver = requireNonNull(resolver, "resolver");
+    this.fqdn = requireNonNull(fqdn, "fqdn");
+    this.resultTransformer = requireNonNull(resultTransformer, "resultTransformer");
     this.errorHandler = errorHandler;
   }
 
@@ -110,7 +110,7 @@ class ServiceResolvingChangeNotifier<T> extends AbstractChangeNotifier<T>
       ImmutableSet.Builder<T> builder = ImmutableSet.builder();
       for (LookupResult node : nodes) {
         T transformed = resultTransformer.apply(node);
-        builder.add(checkNotNull(transformed, "transformed"));
+        builder.add(requireNonNull(transformed, "transformed"));
       }
       current = builder.build();
     } catch (Exception e) {

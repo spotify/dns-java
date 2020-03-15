@@ -16,6 +16,8 @@
 
 package com.spotify.dns;
 
+import static java.util.Objects.requireNonNull;
+
 import com.google.common.collect.ImmutableSet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,8 +28,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantLock;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 /**
  * A helper for implementing the {@link ChangeNotifier} interface.
  */
@@ -35,7 +35,7 @@ abstract class AbstractChangeNotifier<T> implements ChangeNotifier<T> {
 
   private static final Logger log = LoggerFactory.getLogger(AbstractChangeNotifier.class);
 
-  private final AtomicReference<Listener<T>> listenerRef = new AtomicReference<Listener<T>>();
+  private final AtomicReference<Listener<T>> listenerRef = new AtomicReference<>();
 
   private final AtomicBoolean listenerNotified = new AtomicBoolean(false);
 
@@ -43,16 +43,16 @@ abstract class AbstractChangeNotifier<T> implements ChangeNotifier<T> {
 
   @Override
   public void setListener(final Listener<T> listener, final boolean fire) {
-    checkNotNull(listener, "listener");
+    requireNonNull(listener, "listener");
 
     lock.lock();
     try {
-          if (!listenerRef.compareAndSet(null, listener)) {
+      if (!listenerRef.compareAndSet(null, listener)) {
         throw new IllegalStateException("Listener already set!");
       }
 
       if (fire) {
-        notifyListener(newChangeNotification(current(), Collections.<T>emptySet()), true);
+        notifyListener(newChangeNotification(current(), Set.of()), true);
       }
     } finally {
       lock.unlock();
@@ -81,7 +81,7 @@ abstract class AbstractChangeNotifier<T> implements ChangeNotifier<T> {
   private void notifyListener(ChangeNotification<T> changeNotification, boolean newListener) {
     lock.lock();
     try {
-      checkNotNull(changeNotification, "changeNotification");
+      requireNonNull(changeNotification, "changeNotification");
 
       final Listener<T> listener = listenerRef.get();
       if (listener != null) {
@@ -100,10 +100,10 @@ abstract class AbstractChangeNotifier<T> implements ChangeNotifier<T> {
   }
 
   protected final ChangeNotification<T> newChangeNotification(Set<T> current, Set<T> previous) {
-    checkNotNull(current, "current");
-    checkNotNull(previous, "previous");
+    requireNonNull(current, "current");
+    requireNonNull(previous, "previous");
 
-    return new ChangeNotificationImpl<T>(current, previous);
+    return new ChangeNotificationImpl<>(current, previous);
   }
 
   private static class ChangeNotificationImpl<T> implements ChangeNotification<T> {
