@@ -16,13 +16,12 @@
 
 package com.spotify.dns;
 
+import static com.google.common.base.Throwables.throwIfUnchecked;
 import static java.util.Objects.requireNonNull;
 
 import com.google.common.base.Preconditions;
-import com.google.common.base.Throwables;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
-
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -67,7 +66,8 @@ class RetainingDnsSrvResolver implements DnsSrvResolver {
         return cache.getIfPresent(fqdn);
       }
 
-      throw Throwables.propagate(e);
+      throwIfUnchecked(e);
+      throw new RuntimeException(e);
     }
   }
 }
