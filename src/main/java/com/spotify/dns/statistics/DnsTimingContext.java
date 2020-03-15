@@ -19,6 +19,7 @@ package com.spotify.dns.statistics;
 /**
  * Implement to handle timings when performing dns requests.
  */
+@FunctionalInterface
 public interface DnsTimingContext {
   void stop();
 }
