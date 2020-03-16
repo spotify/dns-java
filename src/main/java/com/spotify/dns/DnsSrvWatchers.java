@@ -81,7 +81,11 @@ public final class DnsSrvWatchers {
   public static <T> DnsSrvWatcherBuilder<T> newBuilder(
       DnsSrvResolver resolver,
       com.google.common.base.Function<LookupResult, T> resultTransformer) {
-    return newBuilder(resolver, resultTransformer);
+
+    requireNonNull(resolver, "resolver");
+    requireNonNull(resultTransformer, "resultTransformer");
+
+    return new DnsSrvWatcherBuilder<>(resolver, resultTransformer);
   }
 
   public static final class DnsSrvWatcherBuilder<T> {
