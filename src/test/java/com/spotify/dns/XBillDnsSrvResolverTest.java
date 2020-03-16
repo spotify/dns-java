@@ -16,9 +16,17 @@
 
 package com.spotify.dns;
 
-import com.google.common.base.Function;
-import com.google.common.collect.Lists;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.junit.Assert.assertThat;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
+import java.io.IOException;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -36,29 +44,16 @@ import org.xbill.DNS.Section;
 import org.xbill.DNS.TextParseException;
 import org.xbill.DNS.Type;
 
-import java.io.IOException;
-import java.util.HashSet;
-import java.util.List;
-
-import static java.util.Arrays.asList;
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
 public class XBillDnsSrvResolverTest {
   XBillDnsSrvResolver resolver;
 
   LookupFactory lookupFactory;
   Resolver xbillResolver;
 
-  @Rule
-  public ExpectedException thrown = ExpectedException.none();
+  @Rule public ExpectedException thrown = ExpectedException.none();
 
   @Before
-  public void setUp() throws Exception {
+  public void setUp() {
     lookupFactory = mock(LookupFactory.class);
 
     resolver = new XBillDnsSrvResolver(lookupFactory);
@@ -67,27 +62,22 @@ public class XBillDnsSrvResolverTest {
   }
 
   @After
-  public void tearDown() throws Exception {
+  public void tearDown() {
     Lookup.refreshDefault();
   }
 
   @Test
   public void shouldReturnResultsFromLookup() throws Exception {
     String fqdn = "thefqdn.";
-    List<String> resultNodes = asList("node1.domain.", "node2.domain.");
+    String[] resultNodes = new String[] { "node1.domain.", "node2.domain." };
 
     setupResponseForQuery(fqdn, fqdn, resultNodes);
 
     List<LookupResult> actual = resolver.resolve(fqdn);
 
-    HashSet<String> nodeNames = new HashSet<String>(Lists.transform(actual, new Function<LookupResult, String>() {
-      @Override
-      public String apply(LookupResult input) {
-        return input.host();
-      }
-    }));
+    Set<String> nodeNames = actual.stream().map(LookupResult::host).collect(Collectors.toSet());
 
-    assertThat(nodeNames, equalTo(new HashSet<String>(resultNodes)));
+    assertThat(nodeNames, containsInAnyOrder(resultNodes));
   }
 
   @Test
@@ -96,7 +86,7 @@ public class XBillDnsSrvResolverTest {
     thrown.expectMessage("response does not match query");
 
     String fqdn = "thefqdn.";
-    setupResponseForQuery(fqdn, "somethingelse.", asList("node1.domain.", "node2.domain."));
+    setupResponseForQuery(fqdn, "somethingelse.", "node1.domain.", "node2.domain.");
 
     resolver.resolve(fqdn);
   }
@@ -107,7 +97,7 @@ public class XBillDnsSrvResolverTest {
     thrown.expectMessage("thefqdn.");
 
     String fqdn = "thefqdn.";
-    setupResponseForQuery(fqdn, "somethingelse.", asList("node1.domain.", "node2.domain."));
+    setupResponseForQuery(fqdn, "somethingelse.", "node1.domain.", "node2.domain.");
 
     resolver.resolve(fqdn);
   }
@@ -137,9 +127,11 @@ public class XBillDnsSrvResolverTest {
     return result;
   }
 
-  private void setupResponseForQuery(String queryFqdn, String responseFqdn, List<String> results) throws IOException {
+  private void setupResponseForQuery(String queryFqdn, String responseFqdn, String... results)
+      throws IOException {
     when(lookupFactory.forName(queryFqdn)).thenReturn(testLookup(queryFqdn));
-    when(xbillResolver.send(any(Message.class))).thenReturn(messageWithNodes(responseFqdn, results));
+    when(xbillResolver.send(any(Message.class)))
+        .thenReturn(messageWithNodes(responseFqdn, results));
   }
 
   private Lookup testLookup(String thefqdn) throws TextParseException {
@@ -150,7 +142,7 @@ public class XBillDnsSrvResolverTest {
     return result;
   }
 
-  private Message messageWithNodes(String query, Iterable<String> names) throws TextParseException {
+  private Message messageWithNodes(String query, String[] names) throws TextParseException {
     Name queryName = Name.fromString(query);
     Record question = Record.newRecord(queryName, Type.SRV, DClass.IN);
     Message queryMessage = Message.newQuery(question);
@@ -158,8 +150,10 @@ public class XBillDnsSrvResolverTest {
     result.setHeader(queryMessage.getHeader());
     result.addRecord(question, Section.QUESTION);
 
-    for (String name1 : names){
-      result.addRecord(new SRVRecord(queryName, DClass.IN, 1, 1, 1, 8080, Name.fromString(name1)), Section.ANSWER);
+    for (String name1 : names) {
+      result.addRecord(
+          new SRVRecord(queryName, DClass.IN, 1, 1, 1, 8080, Name.fromString(name1)),
+          Section.ANSWER);
     }
 
     return result;

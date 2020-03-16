@@ -16,15 +16,13 @@
 
 package com.spotify.dns;
 
-import com.google.common.base.Preconditions;
+import static java.util.Objects.requireNonNull;
+
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.util.concurrent.UncheckedExecutionException;
-
-import org.xbill.DNS.Lookup;
-
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
+import org.xbill.DNS.Lookup;
 
 /**
  * Caches Lookup instances using a per-thread cache; this is so that different threads will never
@@ -35,14 +33,9 @@ class CachingLookupFactory implements LookupFactory {
   private final ThreadLocal<Cache<String, Lookup>> cacheHolder;
 
   CachingLookupFactory(LookupFactory delegate) {
-    this.delegate = Preconditions.checkNotNull(delegate, "delegate");
+    this.delegate = requireNonNull(delegate, "delegate");
     cacheHolder =
-        new ThreadLocal<Cache<String, Lookup>>() {
-          @Override
-          protected Cache<String, Lookup> initialValue() {
-            return CacheBuilder.newBuilder().build();
-          }
-        };
+        ThreadLocal.withInitial(() -> CacheBuilder.newBuilder().build());
   }
 
   @Override
@@ -50,12 +43,7 @@ class CachingLookupFactory implements LookupFactory {
     try {
       return cacheHolder.get().get(
           fqdn,
-          new Callable<Lookup>() {
-            @Override
-            public Lookup call() {
-              return delegate.forName(fqdn);
-            }
-          }
+          () -> delegate.forName(fqdn)
       );
     } catch (ExecutionException e) {
       throw new DnsException(e);

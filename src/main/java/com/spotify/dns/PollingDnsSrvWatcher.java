@@ -21,8 +21,8 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
-import static com.google.common.base.Preconditions.checkNotNull;
 import static com.spotify.dns.ChangeNotifierFactory.RunnableChangeNotifier;
+import static java.util.Objects.requireNonNull;
 
 class PollingDnsSrvWatcher<T> implements DnsSrvWatcher<T> {
 
@@ -37,10 +37,10 @@ class PollingDnsSrvWatcher<T> implements DnsSrvWatcher<T> {
                        ScheduledExecutorService executor,
                        long pollingInterval,
                        TimeUnit pollingIntervalUnit) {
-    this.changeNotifierFactory = checkNotNull(changeNotifierFactory, "changeNotifierFactory");
-    this.executor = checkNotNull(executor, "executor");
+    this.changeNotifierFactory = requireNonNull(changeNotifierFactory, "changeNotifierFactory");
+    this.executor = requireNonNull(executor, "executor");
     this.pollingInterval = pollingInterval;
-    this.pollingIntervalUnit = checkNotNull(pollingIntervalUnit, "pollingIntervalUnit");
+    this.pollingIntervalUnit = requireNonNull(pollingIntervalUnit, "pollingIntervalUnit");
   }
 
   @Override

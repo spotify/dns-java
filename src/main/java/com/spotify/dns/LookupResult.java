@@ -1,6 +1,6 @@
 package com.spotify.dns;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 /**
  * Immutable data object with the relevant parts of an SRV record.
@@ -15,7 +15,7 @@ public class LookupResult {
 
   private LookupResult(final String host, final int port, final int priority, final int weight,
                        final long ttl) {
-    this.host = checkNotNull(host, "host");
+    this.host = requireNonNull(host, "host");
     this.port = port;
     this.priority = priority;
     this.weight = weight;

@@ -29,7 +29,7 @@ class AggregatingChangeNotifier<T> extends AbstractChangeNotifier<T> {
 
   private final List<ChangeNotifier<T>> changeNotifiers;
 
-  private volatile Set<T> records = ChangeNotifiers.initialEmptyDataInstance();
+  private volatile Set<T> records;
 
   /**
    * Create a new aggregating {@link ChangeNotifier}.
@@ -41,12 +41,7 @@ class AggregatingChangeNotifier<T> extends AbstractChangeNotifier<T> {
 
     // Set up forwarding of listeners
     for (final ChangeNotifier<T> changeNotifier : this.changeNotifiers) {
-      changeNotifier.setListener(new Listener<T>() {
-         @Override
-         public void onChange(final ChangeNotification<T> ignored) {
-           checkChange();
-         }
-       }, false);
+      changeNotifier.setListener(ignored -> checkChange(), false);
     }
 
     records = aggregateSet();

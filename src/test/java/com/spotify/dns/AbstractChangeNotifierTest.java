@@ -16,18 +16,6 @@
 
 package com.spotify.dns;
 
-import com.google.common.collect.Sets;
-
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-
-import java.util.Set;
-
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.junit.Assert.assertThat;
@@ -36,6 +24,15 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+
+import java.util.Set;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.ExpectedException;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 
 public class AbstractChangeNotifierTest {
 
@@ -51,13 +48,13 @@ public class AbstractChangeNotifierTest {
   AbstractChangeNotifier<String> sut;
 
   @Before
-  public void setUp() throws Exception {
+  public void setUp() {
     MockitoAnnotations.initMocks(this);
 
-    sut = new AbstractChangeNotifier<String>() {
+    sut = new AbstractChangeNotifier<>() {
       @Override
       public Set<String> current() {
-        return Sets.newHashSet("foo", "bar");
+        return Set.of("foo", "bar");
       }
 
       @Override
@@ -67,7 +64,7 @@ public class AbstractChangeNotifierTest {
   }
 
   @Test
-  public void shouldRegisterListener() throws Exception {
+  public void shouldRegisterListener() {
     sut.setListener(listener, false);
     sut.fireRecordsUpdated(changeNotification);
 
@@ -76,7 +73,7 @@ public class AbstractChangeNotifierTest {
 
   @Test
   @SuppressWarnings("unchecked")
-  public void shouldNotFireImmediatelyIfFalse() throws Exception {
+  public void shouldNotFireImmediatelyIfFalse() {
     sut.setListener(listener, false);
 
     verify(listener, never()).onChange(any(ChangeNotifier.ChangeNotification.class));
@@ -84,7 +81,7 @@ public class AbstractChangeNotifierTest {
 
   @Test
   @SuppressWarnings("unchecked")
-  public void shouldFireImmediatelyIfTrue() throws Exception {
+  public void shouldFireImmediatelyIfTrue() {
     sut.setListener(listener, true);
 
     final ArgumentCaptor<ChangeNotifier.ChangeNotification> captor =
@@ -99,7 +96,7 @@ public class AbstractChangeNotifierTest {
 
   @Test
   @SuppressWarnings("unchecked")
-  public void shouldNotFireAfterClose() throws Exception {
+  public void shouldNotFireAfterClose() {
     sut.setListener(listener, false);
     sut.close();
     sut.fireRecordsUpdated(changeNotification);
@@ -109,7 +106,7 @@ public class AbstractChangeNotifierTest {
 
   @Test
   @SuppressWarnings("unchecked")
-  public void shouldNotAllowMultipleListeners() throws Exception {
+  public void shouldNotAllowMultipleListeners() {
     sut.setListener(listener, false);
 
     thrown.expect(IllegalStateException.class);
@@ -118,7 +115,7 @@ public class AbstractChangeNotifierTest {
 
   @Test
   @SuppressWarnings("unchecked")
-  public void shouldIgnoreListenerExceptions() throws Exception {
+  public void shouldIgnoreListenerExceptions() {
     doThrow(new RuntimeException("stupid listener"))
         .when(listener)
         .onChange(any(ChangeNotifier.ChangeNotification.class));

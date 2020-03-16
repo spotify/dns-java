@@ -16,18 +16,17 @@
 
 package com.spotify.dns;
 
-import com.google.common.base.Function;
-import com.google.common.base.Functions;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
+import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
@@ -46,9 +45,9 @@ public final class DnsSrvWatchers {
    * @return a builder for further configuring the watcher
    */
   public static DnsSrvWatcherBuilder<LookupResult> newBuilder(DnsSrvResolver resolver) {
-    checkNotNull(resolver, "resolver");
+    requireNonNull(resolver, "resolver");
 
-    return new DnsSrvWatcherBuilder<LookupResult>(resolver, Functions.<LookupResult>identity());
+    return new DnsSrvWatcherBuilder<>(resolver, Function.identity());
   }
 
   /**
@@ -69,10 +68,20 @@ public final class DnsSrvWatchers {
       DnsSrvResolver resolver,
       Function<LookupResult, T> resultTransformer) {
 
-    checkNotNull(resolver, "resolver");
-    checkNotNull(resultTransformer, "resultTransformer");
+    requireNonNull(resolver, "resolver");
+    requireNonNull(resultTransformer, "resultTransformer");
 
-    return new DnsSrvWatcherBuilder<T>(resolver, resultTransformer);
+    return new DnsSrvWatcherBuilder<>(resolver, resultTransformer);
+  }
+
+  /**
+   * @deprecated Use {@link #newBuilder(DnsSrvResolver, java.util.function.Function)}
+   */
+  @Deprecated(since = "3.2.0")
+  public static <T> DnsSrvWatcherBuilder<T> newBuilder(
+      DnsSrvResolver resolver,
+      com.google.common.base.Function<LookupResult, T> resultTransformer) {
+    return newBuilder(resolver, resultTransformer);
   }
 
   public static final class DnsSrvWatcherBuilder<T> {
@@ -118,15 +127,6 @@ public final class DnsSrvWatchers {
     public DnsSrvWatcher<T> build() {
       checkState(polling ^ dnsSrvWatcherFactory != null, "specify either polling or custom trigger");
 
-      final ChangeNotifierFactory<T> changeNotifierFactory =
-          new ChangeNotifierFactory<T>() {
-            @Override
-            public RunnableChangeNotifier<T> create(String fqdn) {
-              return new ServiceResolvingChangeNotifier<T>(resolver, fqdn, resultTransformer,
-                                                           errorHandler);
-            }
-          };
-
       DnsSrvWatcherFactory<T> watcherFactory;
       if (polling) {
         final ScheduledExecutorService executor =
@@ -137,23 +137,22 @@ public final class DnsSrvWatchers {
                     1, new ThreadFactoryBuilder().setNameFormat("dns-lookup-%d").build()),
                 0, SECONDS);
 
-        watcherFactory = new DnsSrvWatcherFactory<T>() {
-          @Override
-          public DnsSrvWatcher<T> create(ChangeNotifierFactory<T> changeNotifierFactory) {
-            return new PollingDnsSrvWatcher<T>(changeNotifierFactory, executor, pollingInterval,
-                                               pollingIntervalUnit);
-          }
-        };
+        watcherFactory =
+            cnf -> new PollingDnsSrvWatcher<>(cnf, executor, pollingInterval, pollingIntervalUnit);
       } else {
-        watcherFactory = checkNotNull(dnsSrvWatcherFactory);
+        watcherFactory = requireNonNull(dnsSrvWatcherFactory, "dnsSrvWatcherFactory");
       }
+
+      final ChangeNotifierFactory<T> changeNotifierFactory =
+          fqdn -> new ServiceResolvingChangeNotifier<>(
+              resolver, fqdn, resultTransformer, errorHandler);
 
       return watcherFactory.create(changeNotifierFactory);
     }
 
     public DnsSrvWatcherBuilder<T> polling(long pollingInterval, TimeUnit pollingIntervalUnit) {
       checkArgument(pollingInterval > 0);
-      checkNotNull(pollingIntervalUnit, "pollingIntervalUnit");
+      requireNonNull(pollingIntervalUnit, "pollingIntervalUnit");
 
       return new DnsSrvWatcherBuilder<T>(resolver, resultTransformer, true, pollingInterval,
                                          pollingIntervalUnit, errorHandler, dnsSrvWatcherFactory,
@@ -167,7 +166,7 @@ public final class DnsSrvWatchers {
     }
 
     public DnsSrvWatcherBuilder<T> customTrigger(DnsSrvWatcherFactory<T> watcherFactory) {
-      checkNotNull(watcherFactory, "watcherFactory");
+      requireNonNull(watcherFactory, "watcherFactory");
 
       return new DnsSrvWatcherBuilder<T>(resolver, resultTransformer, true, pollingInterval,
                                          pollingIntervalUnit, errorHandler, watcherFactory,
@@ -175,7 +174,7 @@ public final class DnsSrvWatchers {
     }
 
     public DnsSrvWatcherBuilder<T> withErrorHandler(ErrorHandler errorHandler) {
-      checkNotNull(errorHandler, "errorHandler");
+      requireNonNull(errorHandler, "errorHandler");
 
       return new DnsSrvWatcherBuilder<T>(resolver, resultTransformer, true, pollingInterval,
                                          pollingIntervalUnit, errorHandler, dnsSrvWatcherFactory,

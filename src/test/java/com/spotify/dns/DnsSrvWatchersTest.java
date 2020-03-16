@@ -1,18 +1,15 @@
 package com.spotify.dns;
 
-import com.google.common.collect.ImmutableList;
-
-import org.junit.Test;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.is;
 
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
-
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.is;
+import org.junit.Test;
 
 public class DnsSrvWatchersTest {
 
@@ -28,7 +25,7 @@ public class DnsSrvWatchersTest {
     final DnsSrvResolver srvResolver = new FakeResolver(
         "horse.sto3.spotify.net", LookupResult.create("localhost", 1, 0, 0, 0));
 
-    final AtomicReference<Set<LookupResult>> hosts = new AtomicReference<Set<LookupResult>>();
+    final AtomicReference<Set<LookupResult>> hosts = new AtomicReference<>();
     final CountDownLatch latch = new CountDownLatch(1);
 
     final ChangeNotifier.Listener<LookupResult> listener = new FakeListener(hosts, latch);
@@ -80,7 +77,7 @@ public class DnsSrvWatchersTest {
     @Override
     public List<LookupResult> resolve(String fqdn) {
       if (this.fqdn.equals(fqdn)) {
-        return ImmutableList.of(result);
+        return List.of(result);
       } else {
         return null;
       }

@@ -16,11 +16,10 @@
 
 package com.spotify.dns;
 
-import com.google.common.base.Supplier;
+import static java.util.Objects.requireNonNull;
 
 import java.util.Set;
-
-import static com.google.common.base.Preconditions.checkNotNull;
+import java.util.function.Supplier;
 
 class DirectChangeNotifier<T> extends AbstractChangeNotifier<T>
     implements ChangeNotifierFactory.RunnableChangeNotifier<T> {
@@ -31,7 +30,7 @@ class DirectChangeNotifier<T> extends AbstractChangeNotifier<T>
   private volatile boolean run = true;
 
   public DirectChangeNotifier(Supplier<Set<T>> recordsSupplier) {
-    this.recordsSupplier = checkNotNull(recordsSupplier, "recordsSupplier");
+    this.recordsSupplier = requireNonNull(recordsSupplier, "recordsSupplier");
   }
 
   @Override

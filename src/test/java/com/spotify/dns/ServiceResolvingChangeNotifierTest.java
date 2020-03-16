@@ -16,20 +16,7 @@
 
 package com.spotify.dns;
 
-import com.google.common.base.Function;
-import com.google.common.base.Functions;
-
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-
-import java.util.List;
-
-import javax.annotation.Nullable;
-
-import static com.google.common.collect.ImmutableList.of;
+import static java.util.List.of;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.junit.Assert.assertThat;
@@ -42,6 +29,14 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
+import java.util.List;
+import java.util.function.Function;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+
 public class ServiceResolvingChangeNotifierTest {
 
   private static final String FQDN = "example.com";
@@ -53,13 +48,13 @@ public class ServiceResolvingChangeNotifierTest {
   ErrorHandler errorHandler;
 
   @Before
-  public void setUp() throws Exception {
+  public void setUp() {
     MockitoAnnotations.initMocks(this);
   }
 
   @Test
   @SuppressWarnings("unchecked")
-  public void shouldCallListenerOnChange() throws Exception {
+  public void shouldCallListenerOnChange() {
     ChangeNotifierFactory.RunnableChangeNotifier<LookupResult> sut = createNotifier();
     ChangeNotifier.Listener<LookupResult> listener = mock(ChangeNotifier.Listener.class);
     sut.setListener(listener, false);
@@ -93,7 +88,7 @@ public class ServiceResolvingChangeNotifierTest {
 
   @Test
   @SuppressWarnings("unchecked")
-  public void shouldCallListenerOnSet() throws Exception {
+  public void shouldCallListenerOnSet() {
     ChangeNotifierFactory.RunnableChangeNotifier<LookupResult> sut = createNotifier();
     ChangeNotifier.Listener<LookupResult> listener = mock(ChangeNotifier.Listener.class);
 
@@ -116,7 +111,7 @@ public class ServiceResolvingChangeNotifierTest {
 
   @Test
   @SuppressWarnings("unchecked")
-  public void shouldReturnImmutableSets() throws Exception {
+  public void shouldReturnImmutableSets() {
     ChangeNotifierFactory.RunnableChangeNotifier<LookupResult> sut = createNotifier();
     ChangeNotifier.Listener<LookupResult> listener = mock(ChangeNotifier.Listener.class);
 
@@ -149,7 +144,7 @@ public class ServiceResolvingChangeNotifierTest {
 
   @Test
   @SuppressWarnings("unchecked")
-  public void shouldOnlyChangeIfTransformedValuesChange() throws Exception {
+  public void shouldOnlyChangeIfTransformedValuesChange() {
     ChangeNotifierFactory.RunnableChangeNotifier<String> sut = createHostNotifier();
     ChangeNotifier.Listener<String> listener = mock(ChangeNotifier.Listener.class);
     sut.setListener(listener, false);
@@ -174,7 +169,7 @@ public class ServiceResolvingChangeNotifierTest {
 
   @Test
   @SuppressWarnings("unchecked")
-  public void shouldStopResolvingAfterClose() throws Exception {
+  public void shouldStopResolvingAfterClose() {
     ChangeNotifierFactory.RunnableChangeNotifier<LookupResult> sut = createNotifier();
     ChangeNotifier.Listener<LookupResult> listener = mock(ChangeNotifier.Listener.class);
     sut.setListener(listener, false);
@@ -188,7 +183,7 @@ public class ServiceResolvingChangeNotifierTest {
 
   @Test
   @SuppressWarnings("unchecked")
-  public void shouldDoSomethingWithNulls() throws Exception {
+  public void shouldDoSomethingWithNulls() {
     Function<LookupResult, String> f = mock(Function.class);
     ChangeNotifierFactory.RunnableChangeNotifier<String> sut = createTransformingNotifier(f);
     ChangeNotifier.Listener<String> listener = mock(ChangeNotifier.Listener.class);
@@ -211,7 +206,7 @@ public class ServiceResolvingChangeNotifierTest {
 
   @Test
   @SuppressWarnings("unchecked")
-  public void shouldCallErrorHandlerOnResolveErrors() throws Exception {
+  public void shouldCallErrorHandlerOnResolveErrors() {
     Function<LookupResult, String> f = mock(Function.class);
     ChangeNotifierFactory.RunnableChangeNotifier<String> sut = createTransformingNotifier(f);
     ChangeNotifier.Listener<String> listener = mock(ChangeNotifier.Listener.class);
@@ -230,17 +225,11 @@ public class ServiceResolvingChangeNotifierTest {
   }
 
   private ChangeNotifierFactory.RunnableChangeNotifier<LookupResult> createNotifier() {
-    return createTransformingNotifier(Functions.<LookupResult>identity());
+    return createTransformingNotifier(Function.identity());
   }
 
   private ChangeNotifierFactory.RunnableChangeNotifier<String> createHostNotifier() {
-    return createTransformingNotifier(new Function<LookupResult, String>() {
-      @Nullable
-      @Override
-      public String apply(@Nullable LookupResult input) {
-        return input != null ? input.host() : null;
-      }
-    });
+    return createTransformingNotifier(input -> input != null ? input.host() : null);
   }
 
   private <T> ChangeNotifierFactory.RunnableChangeNotifier<T> createTransformingNotifier(

@@ -25,6 +25,7 @@ package com.spotify.dns;
  *
  * @param <T> The record type
  */
+@FunctionalInterface
 public interface DnsSrvWatcherFactory<T> {
 
   /**

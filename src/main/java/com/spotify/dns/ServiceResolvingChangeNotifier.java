@@ -16,16 +16,14 @@
 
 package com.spotify.dns;
 
-import com.google.common.base.Function;
-import com.google.common.collect.ImmutableSet;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import static java.util.Objects.requireNonNull;
 
-import javax.annotation.Nullable;
+import com.google.common.collect.ImmutableSet;
 import java.util.List;
 import java.util.Set;
-
-import static com.google.common.base.Preconditions.checkNotNull;
+import java.util.function.Function;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * A {@link ChangeNotifier} that resolves and provides records using a {@link DnsSrvResolver}.
@@ -41,7 +39,6 @@ class ServiceResolvingChangeNotifier<T> extends AbstractChangeNotifier<T>
   private final String fqdn;
   private final Function<LookupResult, T> resultTransformer;
 
-  @Nullable
   private final ErrorHandler errorHandler;
 
   private volatile Set<T> records = ChangeNotifiers.initialEmptyDataInstance();
@@ -62,16 +59,16 @@ class ServiceResolvingChangeNotifier<T> extends AbstractChangeNotifier<T>
    * @param resolver            The resolver to use.
    * @param fqdn                The name to lookup SRV records for
    * @param resultTransformer   The transform function
-   * @param errorHandler        The error handler that will receive exceptions
+   * @param errorHandler        The error handler that will receive exceptions (nullable)
    */
   ServiceResolvingChangeNotifier(final DnsSrvResolver resolver,
                                  final String fqdn,
                                  final Function<LookupResult, T> resultTransformer,
-                                 @Nullable final ErrorHandler errorHandler) {
+                                 final ErrorHandler errorHandler) {
 
-    this.resolver = checkNotNull(resolver);
-    this.fqdn = checkNotNull(fqdn, "fqdn");
-    this.resultTransformer = checkNotNull(resultTransformer, "resultTransformer");
+    this.resolver = requireNonNull(resolver, "resolver");
+    this.fqdn = requireNonNull(fqdn, "fqdn");
+    this.resultTransformer = requireNonNull(resultTransformer, "resultTransformer");
     this.errorHandler = errorHandler;
   }
 
@@ -112,7 +109,7 @@ class ServiceResolvingChangeNotifier<T> extends AbstractChangeNotifier<T>
       ImmutableSet.Builder<T> builder = ImmutableSet.builder();
       for (LookupResult node : nodes) {
         T transformed = resultTransformer.apply(node);
-        builder.add(checkNotNull(transformed, "transformed"));
+        builder.add(requireNonNull(transformed, "transformed"));
       }
       current = builder.build();
     } catch (Exception e) {

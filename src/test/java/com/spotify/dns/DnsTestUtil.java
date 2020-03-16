@@ -16,25 +16,17 @@
 
 package com.spotify.dns;
 
-import com.google.common.base.Function;
-import com.google.common.collect.Lists;
-
-import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Utility functions that are shared between tests.
  */
 public class DnsTestUtil {
   static List<LookupResult> nodes(String... nodeNames) {
-    return Lists.transform(
-        Arrays.asList(nodeNames),
-        new Function<String, LookupResult>() {
-          @Override
-          public LookupResult apply(String input) {
-            return LookupResult.create(input, 8080, 1, 2, 999);
-          }
-        }
-    );
+    return Stream.of(nodeNames)
+        .map(input -> LookupResult.create(input, 8080, 1, 2, 999))
+        .collect(Collectors.toList());
   }
 }

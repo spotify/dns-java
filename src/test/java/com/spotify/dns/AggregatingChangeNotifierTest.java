@@ -15,30 +15,28 @@
  */
 package com.spotify.dns;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
-import org.junit.Test;
-
-import java.util.Set;
-
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
+import java.util.List;
+import java.util.Set;
+import org.junit.Test;
+
 public class AggregatingChangeNotifierTest {
   @Test
-  public void testEmptySet() throws Exception {
+  public void testEmptySet() {
     MyNotifier childNotifier = new MyNotifier();
-    AggregatingChangeNotifier<String> notifier = new AggregatingChangeNotifier<String>(ImmutableList.<ChangeNotifier<String>>of(childNotifier));
+    AggregatingChangeNotifier<String> notifier = new AggregatingChangeNotifier<>(List.of(childNotifier));
 
     ChangeNotifier.Listener listener = mock(ChangeNotifier.Listener.class);
     notifier.setListener(listener, false);
 
     verify(listener, never()).onChange(any(ChangeNotifier.ChangeNotification.class));
 
-    childNotifier.set(ImmutableSet.<String>of());
+    childNotifier.set(Set.of());
     verifyNoMoreInteractions(listener);
 
   }

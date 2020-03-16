@@ -16,8 +16,6 @@
 
 package com.spotify.dns;
 
-import javax.annotation.Nullable;
-
 /**
  * RuntimeException thrown by the Spotify DNS library.
  */
@@ -25,15 +23,15 @@ public class DnsException extends RuntimeException {
 	public DnsException() {
 	}
 
-	public DnsException(@Nullable String message) {
+	public DnsException(String message) {
 		super(message);
 	}
 
-	public DnsException(@Nullable String message, @Nullable Throwable cause) {
+	public DnsException(String message, Throwable cause) {
 		super(message, cause);
 	}
 
-	public DnsException(@Nullable Throwable cause) {
+	public DnsException(Throwable cause) {
 		super(cause);
 	}
 }

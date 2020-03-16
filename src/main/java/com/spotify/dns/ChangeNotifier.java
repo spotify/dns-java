@@ -59,6 +59,7 @@ public interface ChangeNotifier<T> {
   /**
    * A listener which will be called when the set of records change
    */
+  @FunctionalInterface
   interface Listener<T> {
 
     /**

@@ -16,12 +16,12 @@
 
 package com.spotify.dns;
 
+import static java.util.Objects.requireNonNull;
+
 import com.spotify.dns.statistics.DnsReporter;
 import com.spotify.dns.statistics.DnsTimingContext;
 
 import java.util.List;
-
-import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * Tracks metrics for DnsSrvResolver calls.
@@ -31,8 +31,8 @@ class MeteredDnsSrvResolver implements DnsSrvResolver {
   private final DnsReporter reporter;
 
   MeteredDnsSrvResolver(DnsSrvResolver delegate, DnsReporter reporter) {
-    this.delegate = checkNotNull(delegate, "delegate");
-    this.reporter = checkNotNull(reporter, "reporter");
+    this.delegate = requireNonNull(delegate, "delegate");
+    this.reporter = requireNonNull(reporter, "reporter");
   }
 
   @Override

@@ -22,7 +22,6 @@ import com.spotify.dns.DnsSrvResolvers;
 import com.spotify.dns.LookupResult;
 import com.spotify.dns.statistics.DnsReporter;
 import com.spotify.dns.statistics.DnsTimingContext;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;

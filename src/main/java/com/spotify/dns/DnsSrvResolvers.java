@@ -16,13 +16,12 @@
 
 package com.spotify.dns;
 
-import static com.google.common.primitives.Ints.checkedCast;
 import static java.util.concurrent.TimeUnit.HOURS;
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 import com.spotify.dns.statistics.DnsReporter;
 import java.net.UnknownHostException;
+import java.time.Duration;
 import java.util.List;
 import org.xbill.DNS.ExtendedResolver;
 import org.xbill.DNS.Resolver;
@@ -86,9 +85,8 @@ public final class DnsSrvResolvers {
       }
 
       // Configure the Resolver to use our timeouts.
-      int timeoutSecs = checkedCast(MILLISECONDS.toSeconds(dnsLookupTimeoutMillis));
-      int millisRemainder = checkedCast(dnsLookupTimeoutMillis - SECONDS.toMillis(timeoutSecs));
-      resolver.setTimeout(timeoutSecs, millisRemainder);
+      final Duration timeoutDuration = Duration.ofMillis(dnsLookupTimeoutMillis);
+      resolver.setTimeout(timeoutDuration);
 
       LookupFactory lookupFactory = new SimpleLookupFactory(resolver);
 
