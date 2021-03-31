@@ -12,7 +12,7 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <guava.version>28.2-jre</guava.version>
+        <guava.version>30.1.1-jre</guava.version>
     </properties>
 
     <scm>
