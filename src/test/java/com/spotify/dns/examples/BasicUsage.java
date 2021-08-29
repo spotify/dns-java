@@ -16,7 +16,6 @@
 
 package com.spotify.dns.examples;
 
-import com.spotify.dns.DnsException;
 import com.spotify.dns.DnsSrvResolver;
 import com.spotify.dns.DnsSrvResolvers;
 import com.spotify.dns.LookupResult;
@@ -25,7 +24,6 @@ import com.spotify.dns.statistics.DnsTimingContext;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.List;
 
 public final class BasicUsage {
 
@@ -49,15 +47,15 @@ public final class BasicUsage {
       if (line == null || line.isEmpty()) {
         quit = true;
       } else {
-        try {
-          List<LookupResult> nodes = resolver.resolve(line);
-
-          for (LookupResult node : nodes) {
-            System.out.println(node);
+        resolver.resolve(line).whenComplete((nodes, e) -> {
+          if (e == null) {
+            for (LookupResult node : nodes) {
+              System.out.println(node);
+            }
+          } else {
+            e.printStackTrace(System.out);
           }
-        } catch (DnsException e) {
-          e.printStackTrace(System.out);
-        }
+        });
       }
     }
   }

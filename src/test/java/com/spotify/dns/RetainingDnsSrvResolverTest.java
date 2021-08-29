@@ -24,6 +24,9 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -54,101 +57,107 @@ public class RetainingDnsSrvResolverTest {
   }
 
   @Test
-  public void shouldReturnResultsFromDelegate() {
-    when(delegate.resolve(FQDN)).thenReturn(nodes1);
+  public void shouldReturnResultsFromDelegate() throws ExecutionException, InterruptedException {
+    when(delegate.resolve(FQDN)).thenReturn(CompletableFuture.completedFuture(nodes1));
 
-    assertThat(resolver.resolve(FQDN), equalTo(nodes1));
+    assertThat(resolver.resolve(FQDN).toCompletableFuture().get(), equalTo(nodes1));
   }
 
   @Test
-  public void shouldReturnResultsFromDelegateEachTime() {
-    when(delegate.resolve(FQDN)).thenReturn(nodes1).thenReturn(nodes2);
-
-    resolver.resolve(FQDN);
-
-    assertThat(resolver.resolve(FQDN), equalTo(nodes2));
-  }
-
-  @Test
-  public void shouldRetainDataIfNewResultEmpty() {
-    when(delegate.resolve(FQDN)).thenReturn(nodes1).thenReturn(nodes());
-
-    resolver.resolve(FQDN);
-
-    assertThat(resolver.resolve(FQDN), equalTo(nodes1));
-  }
-
-  @Test
-  public void shouldRetainDataOnFailure() {
+  public void shouldReturnResultsFromDelegateEachTime() throws ExecutionException, InterruptedException {
     when(delegate.resolve(FQDN))
-        .thenReturn(nodes1)
-        .thenThrow(new DnsException("expected"));
+            .thenReturn(CompletableFuture.completedFuture(nodes1))
+            .thenReturn(CompletableFuture.completedFuture(nodes2));
 
-    resolver.resolve(FQDN);
+    resolver.resolve(FQDN).toCompletableFuture().get();
 
-    assertThat(resolver.resolve(FQDN), equalTo(nodes1));
+    assertThat(resolver.resolve(FQDN).toCompletableFuture().get(), equalTo(nodes2));
   }
 
   @Test
-  public void shouldThrowOnFailureAndNoDataAvailable() {
-    when(delegate.resolve(FQDN)).thenThrow(new DnsException("expected"));
-
-    thrown.expect(DnsException.class);
-    thrown.expectMessage("expected");
-
-    resolver.resolve(FQDN);
-  }
-
-  @Test
-  public void shouldReturnEmptyOnEmptyAndNoDataAvailable() {
-    when(delegate.resolve(FQDN)).thenReturn(nodes());
-
-    assertThat(resolver.resolve(FQDN).isEmpty(), is(true));
-  }
-
-  @Test
-  public void shouldNotStoreEmptyResults() {
+  public void shouldRetainDataIfNewResultEmpty() throws ExecutionException, InterruptedException {
     when(delegate.resolve(FQDN))
-        .thenReturn(nodes())
-        .thenThrow(new DnsException("expected"));
+            .thenReturn(CompletableFuture.completedFuture(nodes1))
+            .thenReturn(CompletableFuture.completedFuture(nodes()));
 
-    resolver.resolve(FQDN);
+    resolver.resolve(FQDN).toCompletableFuture().get();
 
-    thrown.expect(DnsException.class);
-    thrown.expectMessage("expected");
+    assertThat(resolver.resolve(FQDN).toCompletableFuture().get(), equalTo(nodes1));
+  }
 
-    resolver.resolve(FQDN);
+  @Test
+  public void shouldRetainDataOnFailure() throws ExecutionException, InterruptedException {
+    when(delegate.resolve(FQDN))
+        .thenReturn(CompletableFuture.completedFuture(nodes1))
+        .thenReturn(CompletableFuture.failedFuture(new DnsException("expected")));
+
+    resolver.resolve(FQDN).toCompletableFuture().get();
+
+    assertThat(resolver.resolve(FQDN).toCompletableFuture().get(), equalTo(nodes1));
+  }
+
+  @Test
+  public void shouldThrowOnFailureAndNoDataAvailable() throws ExecutionException, InterruptedException {
+    DnsException cause = new DnsException("expected");
+    when(delegate.resolve(FQDN)).thenReturn(CompletableFuture.failedFuture(cause));
+
+    thrown.expect(ExecutionException.class);
+    thrown.expectCause(is(cause));
+
+    resolver.resolve(FQDN).toCompletableFuture().get();
+  }
+
+  @Test
+  public void shouldReturnEmptyOnEmptyAndNoDataAvailable() throws ExecutionException, InterruptedException {
+    when(delegate.resolve(FQDN)).thenReturn(CompletableFuture.completedFuture(nodes()));
+
+    assertThat(resolver.resolve(FQDN).toCompletableFuture().get().isEmpty(), is(true));
+  }
+
+  @Test
+  public void shouldNotStoreEmptyResults() throws ExecutionException, InterruptedException {
+    DnsException cause = new DnsException("expected");
+    when(delegate.resolve(FQDN))
+        .thenReturn(CompletableFuture.completedFuture(nodes()))
+        .thenReturn(CompletableFuture.failedFuture(cause));
+
+    resolver.resolve(FQDN).toCompletableFuture().get();
+
+    thrown.expect(ExecutionException.class);
+    thrown.expectCause(is(cause));
+
+    resolver.resolve(FQDN).toCompletableFuture().get();
   }
 
   @Test
   public void shouldNotRetainPastEndOfRetentionOnEmptyResults() throws Exception {
     when(delegate.resolve(FQDN))
-        .thenReturn(nodes("aresult"))
-        .thenReturn(nodes());
+        .thenReturn(CompletableFuture.completedFuture(nodes("aresult")))
+        .thenReturn(CompletableFuture.completedFuture(nodes()));
 
-    resolver.resolve(FQDN);
+    resolver.resolve(FQDN).toCompletableFuture().get();
 
     // expire retained entry
     Thread.sleep(RETENTION_TIME_MILLIS);
 
-    assertThat(resolver.resolve(FQDN).isEmpty(), is(true));
+    assertThat(resolver.resolve(FQDN).toCompletableFuture().get().isEmpty(), is(true));
   }
 
   @Test
   public void shouldNotRetainPastEndOfRetentionOnException() throws Exception {
     DnsException expected = new DnsException("expected");
     when(delegate.resolve(FQDN))
-        .thenReturn(nodes("aresult"))
-        .thenThrow(expected);
+        .thenReturn(CompletableFuture.completedFuture(nodes("aresult")))
+        .thenReturn(CompletableFuture.failedFuture(expected));
 
-    resolver.resolve(FQDN);
+    resolver.resolve(FQDN).toCompletableFuture().get();
 
     // expire retained entry
     Thread.sleep(RETENTION_TIME_MILLIS);
 
-    thrown.expect(equalTo(expected));
+    thrown.expectCause(equalTo(expected));
 
-    resolver.resolve(FQDN);
+    resolver.resolve(FQDN).toCompletableFuture().get();
   }
 
   @Test

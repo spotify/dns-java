@@ -35,6 +35,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import org.hamcrest.Matchers;
 import org.junit.Before;
@@ -54,8 +55,8 @@ public class DnsSrvResolversIT {
   }
 
   @Test
-  public void shouldReturnResultsForValidQuery() {
-    assertThat(resolver.resolve("_spotify-client._tcp.spotify.com").isEmpty(), is(false));
+  public void shouldReturnResultsForValidQuery() throws ExecutionException, InterruptedException {
+    assertThat(resolver.resolve("_spotify-client._tcp.spotify.com").toCompletableFuture().get().isEmpty(), is(false));
   }
 
   @Test
@@ -79,7 +80,7 @@ public class DnsSrvResolversIT {
   }
 
   @Test
-  public void shouldTrackMetricsWhenToldTo() {
+  public void shouldTrackMetricsWhenToldTo() throws ExecutionException, InterruptedException {
     final DnsReporter reporter = mock(DnsReporter.class);
     final DnsTimingContext timingReporter = mock(DnsTimingContext.class);
 
@@ -88,16 +89,16 @@ public class DnsSrvResolversIT {
         .build();
 
     when(reporter.resolveTimer()).thenReturn(timingReporter);
-    resolver.resolve("_spotify-client._tcp.sto.spotify.net");
+    resolver.resolve("_spotify-client._tcp.sto.spotify.net").toCompletableFuture().get();
     verify(timingReporter).stop();
     verify(reporter, never()).reportFailure(isA(RuntimeException.class));
     verify(reporter, times(1)).reportEmpty();
   }
 
   @Test
-  public void shouldFailForBadHostNames() {
+  public void shouldFailForBadHostNames() throws Exception {
     try {
-      resolver.resolve("nonexistenthost");
+      resolver.resolve("nonexistenthost").toCompletableFuture().get();
     }
     catch (DnsException e) {
       assertThat(e.getMessage(), containsString("host not found"));
@@ -111,7 +112,7 @@ public class DnsSrvResolversIT {
         .newBuilder()
         .servers(List.of(server))
         .build();
-    assertThat(resolver.resolve("_spotify-client._tcp.spotify.com").isEmpty(), is(false));
+    assertThat(resolver.resolve("_spotify-client._tcp.spotify.com").toCompletableFuture().get().isEmpty(), is(false));
   }
 
   @Test

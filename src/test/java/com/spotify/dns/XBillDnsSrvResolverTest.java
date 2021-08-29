@@ -18,7 +18,9 @@ package com.spotify.dns;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.containsString;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -26,6 +28,8 @@ import static org.mockito.Mockito.when;
 import java.io.IOException;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 import org.junit.After;
 import org.junit.Before;
@@ -43,6 +47,9 @@ import org.xbill.DNS.SRVRecord;
 import org.xbill.DNS.Section;
 import org.xbill.DNS.TextParseException;
 import org.xbill.DNS.Type;
+import org.xbill.DNS.WireParseException;
+import org.xbill.DNS.lookup.LookupFailedException;
+import org.xbill.DNS.lookup.LookupSession;
 
 public class XBillDnsSrvResolverTest {
   XBillDnsSrvResolver resolver;
@@ -73,7 +80,7 @@ public class XBillDnsSrvResolverTest {
 
     setupResponseForQuery(fqdn, fqdn, resultNodes);
 
-    List<LookupResult> actual = resolver.resolve(fqdn);
+    List<LookupResult> actual = resolver.resolve(fqdn).toCompletableFuture().get();
 
     Set<String> nodeNames = actual.stream().map(LookupResult::host).collect(Collectors.toSet());
 
@@ -82,34 +89,25 @@ public class XBillDnsSrvResolverTest {
 
   @Test
   public void shouldIndicateCauseFromXBillIfLookupFails() throws Exception {
-    thrown.expect(DnsException.class);
-    thrown.expectMessage("response does not match query");
-
     String fqdn = "thefqdn.";
     setupResponseForQuery(fqdn, "somethingelse.", "node1.domain.", "node2.domain.");
 
-    resolver.resolve(fqdn);
-  }
-
-  @Test
-  public void shouldIndicateNameIfLookupFails() throws Exception {
-    thrown.expect(DnsException.class);
-    thrown.expectMessage("thefqdn.");
-
-    String fqdn = "thefqdn.";
-    setupResponseForQuery(fqdn, "somethingelse.", "node1.domain.", "node2.domain.");
-
-    resolver.resolve(fqdn);
+    try{
+      resolver.resolve(fqdn).toCompletableFuture().get();
+      fail("expected lookup failure");
+    } catch (ExecutionException ex){
+      assertThat(ex.getCause().getMessage(), containsString("Lookup of 'thefqdn.'"));
+    }
   }
 
   @Test
   public void shouldReturnEmptyForHostNotFound() throws Exception {
     String fqdn = "thefqdn.";
 
-    when(lookupFactory.forName(fqdn)).thenReturn(testLookup(fqdn));
-    when(xbillResolver.send(any(Message.class))).thenReturn(messageWithRCode(fqdn, Rcode.NXDOMAIN));
+    when(lookupFactory.forName(fqdn)).thenReturn(testLookup());
+    when(xbillResolver.sendAsync(any(Message.class))).thenReturn(CompletableFuture.completedFuture(messageWithRCode(fqdn, Rcode.NXDOMAIN)));
 
-    assertThat(resolver.resolve(fqdn).isEmpty(), is(true));
+    assertThat(resolver.resolve(fqdn).toCompletableFuture().get().isEmpty(), is(true));
   }
 
   // not testing for type not found, as I don't know how to set that up...
@@ -129,17 +127,18 @@ public class XBillDnsSrvResolverTest {
 
   private void setupResponseForQuery(String queryFqdn, String responseFqdn, String... results)
       throws IOException {
-    when(lookupFactory.forName(queryFqdn)).thenReturn(testLookup(queryFqdn));
-    when(xbillResolver.send(any(Message.class)))
-        .thenReturn(messageWithNodes(responseFqdn, results));
+    when(lookupFactory.forName(queryFqdn)).thenReturn(testLookup());
+    if (queryFqdn.equals(responseFqdn)) {
+      when(xbillResolver.sendAsync(any(Message.class)))
+          .thenReturn(CompletableFuture.completedFuture(messageWithNodes(responseFqdn, results)));
+    } else {
+      when(xbillResolver.sendAsync(any(Message.class)))
+              .thenReturn(CompletableFuture.failedFuture(new WireParseException("invalid name in message: ")));
+    }
   }
 
-  private Lookup testLookup(String thefqdn) throws TextParseException {
-    Lookup result = new Lookup(thefqdn, Type.SRV);
-
-    result.setResolver(xbillResolver);
-
-    return result;
+  private LookupSession testLookup() {
+    return LookupSession.builder().resolver(xbillResolver).build();
   }
 
   private Message messageWithNodes(String query, String[] names) throws TextParseException {

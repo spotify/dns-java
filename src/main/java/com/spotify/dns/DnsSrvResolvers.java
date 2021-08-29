@@ -79,7 +79,7 @@ public final class DnsSrvResolvers {
         // or if that's empty, localhost.
         resolver = servers == null ?
                    new ExtendedResolver() :
-                   new ExtendedResolver(servers.toArray(new String[servers.size()]));
+                   new ExtendedResolver(servers.toArray(new String[0]));
       } catch (UnknownHostException e) {
         throw new RuntimeException(e);
       }
@@ -90,9 +90,9 @@ public final class DnsSrvResolvers {
 
       LookupFactory lookupFactory = new SimpleLookupFactory(resolver);
 
-      if (cacheLookups) {
-        lookupFactory = new CachingLookupFactory(lookupFactory);
-      }
+//      if (cacheLookups) {
+//        lookupFactory = new CachingLookupFactory(lookupFactory);
+//      }
 
       DnsSrvResolver result = new XBillDnsSrvResolver(lookupFactory);
 

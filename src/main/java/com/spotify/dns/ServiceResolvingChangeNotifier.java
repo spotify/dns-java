@@ -19,7 +19,6 @@ package com.spotify.dns;
 import static java.util.Objects.requireNonNull;
 
 import com.google.common.collect.ImmutableSet;
-import java.util.List;
 import java.util.Set;
 import java.util.function.Function;
 import org.slf4j.Logger;
@@ -53,7 +52,7 @@ class ServiceResolvingChangeNotifier<T> extends AbstractChangeNotifier<T>
    * and put into a set. The set will then be compared to the previous set and if a
    * change is detected, the notifier will fire.
    *
-   * <p>An optional {@link ErrorHandler} can be used to reacto on {@link DnsException}s thrown
+   * <p>An optional {@link ErrorHandler} can be used to react on {@link DnsException}s thrown
    * by the {@link DnsSrvResolver}.
    *
    * @param resolver            The resolver to use.
@@ -88,45 +87,42 @@ class ServiceResolvingChangeNotifier<T> extends AbstractChangeNotifier<T>
       return;
     }
 
-    final List<LookupResult> nodes;
-    try {
-      nodes = resolver.resolve(fqdn);
-    } catch (DnsException e) {
-      if (errorHandler != null) {
-        errorHandler.handle(fqdn, e);
+    resolver.resolve(fqdn).whenComplete((nodes, e) -> {
+      if (e instanceof DnsException) {
+        if (errorHandler != null) {
+          errorHandler.handle(fqdn, (DnsException) e);
+        }
+        log.error(e.getMessage(), e);
+        fireIfFirstError();
+      } else if (e != null) {
+        log.error(e.getMessage(), e);
+        fireIfFirstError();
+      } else {
+        final Set<T> current;
+        try {
+          ImmutableSet.Builder<T> builder = ImmutableSet.builder();
+          for (LookupResult node : nodes) {
+            T transformed = resultTransformer.apply(node);
+            builder.add(requireNonNull(transformed, "transformed"));
+          }
+          current = builder.build();
+        } catch (Exception transformerException) {
+          log.error(transformerException.getMessage(), transformerException);
+          fireIfFirstError();
+          return;
+        }
+
+        if (ChangeNotifiers.isNoLongerInitial(current, records) || !current.equals(records)) {
+          // This means that any subsequent DNS error will be ignored and the existing result will be kept
+          waitingForFirstEvent = false;
+          final ChangeNotification<T> changeNotification =
+                  newChangeNotification(current, records);
+          records = current;
+
+          fireRecordsUpdated(changeNotification);
+        }
       }
-      log.error(e.getMessage(), e);
-      fireIfFirstError();
-      return;
-    } catch (Exception e) {
-      log.error(e.getMessage(), e);
-      fireIfFirstError();
-      return;
-    }
-
-    final Set<T> current;
-    try {
-      ImmutableSet.Builder<T> builder = ImmutableSet.builder();
-      for (LookupResult node : nodes) {
-        T transformed = resultTransformer.apply(node);
-        builder.add(requireNonNull(transformed, "transformed"));
-      }
-      current = builder.build();
-    } catch (Exception e) {
-      log.error(e.getMessage(), e);
-      fireIfFirstError();
-      return;
-    }
-
-    if (ChangeNotifiers.isNoLongerInitial(current, records) || !current.equals(records)) {
-      // This means that any subsequent DNS error will be ignored and the existing result will be kept
-      waitingForFirstEvent = false;
-      final ChangeNotification<T> changeNotification =
-          newChangeNotification(current, records);
-      records = current;
-
-      fireRecordsUpdated(changeNotification);
-    }
+    });
   }
 
   private void fireIfFirstError() {

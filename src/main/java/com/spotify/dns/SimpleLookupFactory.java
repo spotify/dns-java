@@ -21,32 +21,22 @@ import org.xbill.DNS.Lookup;
 import org.xbill.DNS.Resolver;
 import org.xbill.DNS.TextParseException;
 import org.xbill.DNS.Type;
+import org.xbill.DNS.lookup.LookupSession;
 
-/**
- * A LookupFactory that always returns new instances.
- */
+/** A LookupFactory that always returns new instances. */
 public class SimpleLookupFactory implements LookupFactory {
-
-  private final Resolver resolver;
+  private final LookupSession session;
 
   public SimpleLookupFactory() {
-    this(null);
+    this(Lookup.getDefaultResolver());
   }
 
   public SimpleLookupFactory(Resolver resolver) {
-    this.resolver = resolver;
+    session = LookupSession.builder().resolver(resolver).build();
   }
 
   @Override
-  public Lookup forName(String fqdn) {
-    try {
-      final Lookup lookup = new Lookup(fqdn, Type.SRV, DClass.IN);
-      if (resolver != null) {
-        lookup.setResolver(resolver);
-      }
-      return lookup;
-    } catch (TextParseException e) {
-      throw new DnsException("unable to create lookup for name: " + fqdn, e);
-    }
+  public LookupSession forName(String fqdn) {
+    return session;
   }
 }

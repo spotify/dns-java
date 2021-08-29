@@ -26,6 +26,9 @@ import static org.mockito.Mockito.when;
 import com.spotify.dns.statistics.DnsReporter;
 import com.spotify.dns.statistics.DnsTimingContext;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -71,9 +74,10 @@ public class MeteredDnsSrvResolverTest {
 
   @Test
   public void shouldCountSuccessful() throws Exception {
-    when(delegate.resolve(FQDN)).thenReturn(NOT_EMPTY);
+    CompletableFuture<List<LookupResult>> completedNotEmpty = CompletableFuture.completedFuture(NOT_EMPTY);
+    when(delegate.resolve(FQDN)).thenReturn(completedNotEmpty);
 
-    resolver.resolve(FQDN);
+    resolver.resolve(FQDN).toCompletableFuture().get();
 
     verify(reporter, never()).reportEmpty();
     verify(reporter, never()).reportFailure(RUNTIME_EXCEPTION);
@@ -81,9 +85,10 @@ public class MeteredDnsSrvResolverTest {
 
   @Test
   public void shouldReportEmpty() throws Exception {
-    when(delegate.resolve(FQDN)).thenReturn(EMPTY);
+    CompletableFuture<List<LookupResult>> completedEmpty = CompletableFuture.completedFuture(EMPTY);
+    when(delegate.resolve(FQDN)).thenReturn(completedEmpty);
 
-    resolver.resolve(FQDN);
+    resolver.resolve(FQDN).toCompletableFuture().get();
 
     verify(reporter).reportEmpty();
     verify(reporter, never()).reportFailure(RUNTIME_EXCEPTION);
@@ -91,13 +96,13 @@ public class MeteredDnsSrvResolverTest {
 
   @Test
   public void shouldReportRuntimeException() throws Exception {
-    when(delegate.resolve(FQDN)).thenThrow(RUNTIME_EXCEPTION);
+    when(delegate.resolve(FQDN)).thenReturn(CompletableFuture.failedFuture((RUNTIME_EXCEPTION)));
 
     try {
-      resolver.resolve(FQDN);
+      resolver.resolve(FQDN).toCompletableFuture().get();
       fail("resolve should have thrown exception");
-    } catch(RuntimeException e) {
-      assertEquals(RUNTIME_EXCEPTION, e);
+    } catch(ExecutionException e) {
+      assertEquals(RUNTIME_EXCEPTION, e.getCause());
     }
 
     verify(reporter, never()).reportEmpty();
@@ -106,13 +111,13 @@ public class MeteredDnsSrvResolverTest {
 
   @Test
   public void shouldNotReportError() throws Exception {
-    when(delegate.resolve(FQDN)).thenThrow(ERROR);
+    when(delegate.resolve(FQDN)).thenReturn(CompletableFuture.failedFuture(ERROR));
 
     try {
-      resolver.resolve(FQDN);
+      resolver.resolve(FQDN).toCompletableFuture().get();
       fail("resolve should have thrown exception");
-    } catch(Error e) {
-      assertEquals(ERROR, e);
+    } catch(ExecutionException e) {
+      assertEquals(ERROR, e.getCause());
     }
 
     verify(reporter, never()).reportEmpty();

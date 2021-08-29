@@ -17,6 +17,7 @@
 package com.spotify.dns;
 
 import java.util.List;
+import java.util.concurrent.CompletionStage;
 
 /**
  * Contract for doing SRV lookups.
@@ -30,5 +31,5 @@ public interface DnsSrvResolver {
    * @return a possibly empty list of matching records
    * @throws DnsException if there was an error doing the DNS lookup
    */
-  List<LookupResult> resolve(String fqdn);
+  CompletionStage<List<LookupResult>> resolve(String fqdn);
 }

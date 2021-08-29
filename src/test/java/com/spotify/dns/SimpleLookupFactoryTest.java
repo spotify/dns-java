@@ -27,6 +27,7 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.xbill.DNS.Lookup;
 import org.xbill.DNS.TextParseException;
+import org.xbill.DNS.lookup.LookupSession;
 
 
 public class SimpleLookupFactoryTest {
@@ -46,18 +47,10 @@ public class SimpleLookupFactoryTest {
   }
 
   @Test
-  public void shouldCreateNewLookupsEachTime() {
-    Lookup first = factory.forName("some.other.name.");
-    Lookup second = factory.forName("some.other.name.");
+  public void shouldNotCreateNewLookupsEachTime() {
+    LookupSession first = factory.forName("some.other.name.");
+    LookupSession second = factory.forName("some.other.name.");
 
-    assertThat(first == second, is(false));
-  }
-
-  @Test
-  public void shouldRethrowXBillExceptions() {
-    thrown.expect(DnsException.class);
-    thrown.expectCause(isA(TextParseException.class));
-
-    factory.forName("bad\\1 name");
+    assertThat(first == second, is(true));
   }
 }
