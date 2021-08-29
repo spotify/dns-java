@@ -23,6 +23,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import java.util.List;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -69,5 +70,30 @@ class RetainingDnsSrvResolver implements DnsSrvResolver {
       throwIfUnchecked(e);
       throw new RuntimeException(e);
     }
+  }
+
+  @Override
+  public CompletionStage<List<LookupResult>> resolveAsync(final String fqdn) {
+    requireNonNull(fqdn, "fqdn");
+    return delegate.resolveAsync(fqdn).handle((nodes, e) -> {
+      if (e == null){
+        // No nodes resolved? Return stale data.
+        if (nodes.isEmpty()) {
+          List<LookupResult> cached = cache.getIfPresent(fqdn);
+          return (cached != null) ? cached : nodes;
+        }
+  
+        cache.put(fqdn, nodes);
+  
+        return nodes;
+      } else{
+        if (cache.getIfPresent(fqdn) != null) {
+          return cache.getIfPresent(fqdn);
+        }
+  
+        throwIfUnchecked(e);
+        throw new RuntimeException(e);
+      }
+    });
   }
 }

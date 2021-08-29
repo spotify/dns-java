@@ -16,25 +16,50 @@
 
 package com.spotify.dns;
 
+import static java.util.Objects.requireNonNull;
+
 import org.xbill.DNS.DClass;
 import org.xbill.DNS.Lookup;
 import org.xbill.DNS.Resolver;
 import org.xbill.DNS.TextParseException;
 import org.xbill.DNS.Type;
+import org.xbill.DNS.lookup.LookupSession;
 
-/**
- * A LookupFactory that always returns new instances.
- */
+import java.util.concurrent.Executor;
+import java.util.concurrent.ForkJoinPool;
+
+/** A LookupFactory that always returns new instances. */
 public class SimpleLookupFactory implements LookupFactory {
-
+  private final LookupSession session;
   private final Resolver resolver;
 
+  /**
+   * @deprecated
+   * Deprecated to avoid overloading forkjoin common pool.
+   * Use {@link SimpleLookupFactory#SimpleLookupFactory(Executor)} instead.
+   */
+  @Deprecated
   public SimpleLookupFactory() {
-    this(null);
+    this(Lookup.getDefaultResolver());
   }
 
+  /**
+   * @deprecated
+   * Deprecated to avoid overloading forkjoin common pool.
+   * Use {@link SimpleLookupFactory#SimpleLookupFactory(Resolver, Executor)} instead.
+   */
   public SimpleLookupFactory(Resolver resolver) {
+    this(resolver, ForkJoinPool.commonPool());
+  }
+
+  public SimpleLookupFactory(Executor executor) {
+    this(Lookup.getDefaultResolver(), executor);
+  }
+
+  public SimpleLookupFactory(Resolver resolver, Executor executor) {
+    requireNonNull(executor);
     this.resolver = resolver;
+    this.session = LookupSession.builder().resolver(resolver).executor(executor).build();
   }
 
   @Override
@@ -48,5 +73,10 @@ public class SimpleLookupFactory implements LookupFactory {
     } catch (TextParseException e) {
       throw new DnsException("unable to create lookup for name: " + fqdn, e);
     }
+  }
+
+  @Override
+  public LookupSession sessionForName(String fqdn) {
+    return session;
   }
 }

@@ -24,6 +24,9 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -61,12 +64,30 @@ public class RetainingDnsSrvResolverTest {
   }
 
   @Test
+  public void shouldReturnResultsFromDelegateAsync() throws ExecutionException, InterruptedException {
+    when(delegate.resolveAsync(FQDN)).thenReturn(CompletableFuture.completedFuture(nodes1));
+
+    assertThat(resolver.resolveAsync(FQDN).toCompletableFuture().get(), equalTo(nodes1));
+  }
+
+  @Test
   public void shouldReturnResultsFromDelegateEachTime() {
     when(delegate.resolve(FQDN)).thenReturn(nodes1).thenReturn(nodes2);
 
     resolver.resolve(FQDN);
 
     assertThat(resolver.resolve(FQDN), equalTo(nodes2));
+  }
+
+  @Test
+  public void shouldReturnResultsFromDelegateEachTimeAsync() throws ExecutionException, InterruptedException {
+    when(delegate.resolveAsync(FQDN))
+            .thenReturn(CompletableFuture.completedFuture(nodes1))
+            .thenReturn(CompletableFuture.completedFuture(nodes2));
+
+    resolver.resolveAsync(FQDN).toCompletableFuture().get();
+
+    assertThat(resolver.resolveAsync(FQDN).toCompletableFuture().get(), equalTo(nodes2));
   }
 
   @Test
@@ -79,14 +100,36 @@ public class RetainingDnsSrvResolverTest {
   }
 
   @Test
+  public void shouldRetainDataIfNewResultEmptyAsync() throws ExecutionException, InterruptedException {
+    when(delegate.resolveAsync(FQDN))
+            .thenReturn(CompletableFuture.completedFuture(nodes1))
+            .thenReturn(CompletableFuture.completedFuture(nodes()));
+
+    resolver.resolveAsync(FQDN).toCompletableFuture().get();
+
+    assertThat(resolver.resolveAsync(FQDN).toCompletableFuture().get(), equalTo(nodes1));
+  }
+
+  @Test
   public void shouldRetainDataOnFailure() {
     when(delegate.resolve(FQDN))
-        .thenReturn(nodes1)
-        .thenThrow(new DnsException("expected"));
+            .thenReturn(nodes1)
+            .thenThrow(new DnsException("expected"));
 
     resolver.resolve(FQDN);
 
     assertThat(resolver.resolve(FQDN), equalTo(nodes1));
+  }
+
+  @Test
+  public void shouldRetainDataOnFailureAsync() throws ExecutionException, InterruptedException {
+    when(delegate.resolveAsync(FQDN))
+        .thenReturn(CompletableFuture.completedFuture(nodes1))
+        .thenReturn(CompletableFuture.failedFuture(new DnsException("expected")));
+
+    resolver.resolveAsync(FQDN).toCompletableFuture().get();
+
+    assertThat(resolver.resolveAsync(FQDN).toCompletableFuture().get(), equalTo(nodes1));
   }
 
   @Test
@@ -100,6 +143,17 @@ public class RetainingDnsSrvResolverTest {
   }
 
   @Test
+  public void shouldThrowOnFailureAndNoDataAvailableAsync() throws ExecutionException, InterruptedException {
+    DnsException cause = new DnsException("expected");
+    when(delegate.resolveAsync(FQDN)).thenReturn(CompletableFuture.failedFuture(cause));
+
+    thrown.expect(ExecutionException.class);
+    thrown.expectCause(is(cause));
+
+    resolver.resolveAsync(FQDN).toCompletableFuture().get();
+  }
+
+  @Test
   public void shouldReturnEmptyOnEmptyAndNoDataAvailable() {
     when(delegate.resolve(FQDN)).thenReturn(nodes());
 
@@ -107,10 +161,17 @@ public class RetainingDnsSrvResolverTest {
   }
 
   @Test
+  public void shouldReturnEmptyOnEmptyAndNoDataAvailableAsync() throws ExecutionException, InterruptedException {
+    when(delegate.resolveAsync(FQDN)).thenReturn(CompletableFuture.completedFuture(nodes()));
+
+    assertThat(resolver.resolveAsync(FQDN).toCompletableFuture().get().isEmpty(), is(true));
+  }
+
+  @Test
   public void shouldNotStoreEmptyResults() {
     when(delegate.resolve(FQDN))
-        .thenReturn(nodes())
-        .thenThrow(new DnsException("expected"));
+            .thenReturn(nodes())
+            .thenThrow(new DnsException("expected"));
 
     resolver.resolve(FQDN);
 
@@ -121,10 +182,25 @@ public class RetainingDnsSrvResolverTest {
   }
 
   @Test
+  public void shouldNotStoreEmptyResultsAsync() throws ExecutionException, InterruptedException {
+    DnsException cause = new DnsException("expected");
+    when(delegate.resolveAsync(FQDN))
+        .thenReturn(CompletableFuture.completedFuture(nodes()))
+        .thenReturn(CompletableFuture.failedFuture(cause));
+
+    resolver.resolveAsync(FQDN).toCompletableFuture().get();
+
+    thrown.expect(ExecutionException.class);
+    thrown.expectCause(is(cause));
+
+    resolver.resolveAsync(FQDN).toCompletableFuture().get();
+  }
+
+  @Test
   public void shouldNotRetainPastEndOfRetentionOnEmptyResults() throws Exception {
     when(delegate.resolve(FQDN))
-        .thenReturn(nodes("aresult"))
-        .thenReturn(nodes());
+            .thenReturn(nodes("aresult"))
+            .thenReturn(nodes());
 
     resolver.resolve(FQDN);
 
@@ -135,11 +211,25 @@ public class RetainingDnsSrvResolverTest {
   }
 
   @Test
+  public void shouldNotRetainPastEndOfRetentionOnEmptyResultsAsync() throws Exception {
+    when(delegate.resolveAsync(FQDN))
+        .thenReturn(CompletableFuture.completedFuture(nodes("aresult")))
+        .thenReturn(CompletableFuture.completedFuture(nodes()));
+
+    resolver.resolveAsync(FQDN).toCompletableFuture().get();
+
+    // expire retained entry
+    Thread.sleep(RETENTION_TIME_MILLIS);
+
+    assertThat(resolver.resolveAsync(FQDN).toCompletableFuture().get().isEmpty(), is(true));
+  }
+
+  @Test
   public void shouldNotRetainPastEndOfRetentionOnException() throws Exception {
     DnsException expected = new DnsException("expected");
     when(delegate.resolve(FQDN))
-        .thenReturn(nodes("aresult"))
-        .thenThrow(expected);
+            .thenReturn(nodes("aresult"))
+            .thenThrow(expected);
 
     resolver.resolve(FQDN);
 
@@ -149,6 +239,23 @@ public class RetainingDnsSrvResolverTest {
     thrown.expect(equalTo(expected));
 
     resolver.resolve(FQDN);
+  }
+
+  @Test
+  public void shouldNotRetainPastEndOfRetentionOnExceptionAsync() throws Exception {
+    DnsException expected = new DnsException("expected");
+    when(delegate.resolveAsync(FQDN))
+        .thenReturn(CompletableFuture.completedFuture(nodes("aresult")))
+        .thenReturn(CompletableFuture.failedFuture(expected));
+
+    resolver.resolveAsync(FQDN).toCompletableFuture().get();
+
+    // expire retained entry
+    Thread.sleep(RETENTION_TIME_MILLIS);
+
+    thrown.expectCause(equalTo(expected));
+
+    resolver.resolveAsync(FQDN).toCompletableFuture().get();
   }
 
   @Test
