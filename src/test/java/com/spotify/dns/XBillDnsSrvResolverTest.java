@@ -80,7 +80,8 @@ public class XBillDnsSrvResolverTest {
 
     setupResponseForQuery(fqdn, fqdn, resultNodes);
 
-    List<LookupResult> actual = resolver.resolve(fqdn).toCompletableFuture().get();
+    List<LookupResult> actual = resolver.resolve(fqdn);
+    List<LookupResult> actualAsync = resolver.resolveAsync(fqdn).toCompletableFuture().get();
 
     Set<String> nodeNames = actual.stream().map(LookupResult::host).collect(Collectors.toSet());
 
@@ -89,11 +90,22 @@ public class XBillDnsSrvResolverTest {
 
   @Test
   public void shouldIndicateCauseFromXBillIfLookupFails() throws Exception {
+    thrown.expect(DnsException.class);
+    thrown.expectMessage("response does not match query");
+
+    String fqdn = "thefqdn.";
+    setupResponseForQuery(fqdn, "somethingelse.", "node1.domain.", "node2.domain.");
+
+    resolver.resolve(fqdn);
+  }
+
+  @Test
+  public void shouldIndicateCauseFromXBillIfLookupFailsAsync() throws Exception {
     String fqdn = "thefqdn.";
     setupResponseForQuery(fqdn, "somethingelse.", "node1.domain.", "node2.domain.");
 
     try{
-      resolver.resolve(fqdn).toCompletableFuture().get();
+      resolver.resolveAsync(fqdn).toCompletableFuture().get();
       fail("expected lookup failure");
     } catch (ExecutionException ex){
       assertThat(ex.getCause().getMessage(), containsString("Lookup of 'thefqdn.'"));
@@ -101,13 +113,23 @@ public class XBillDnsSrvResolverTest {
   }
 
   @Test
+  public void shouldReturnEmptyForHostNotFoundAsync() throws Exception {
+    String fqdn = "thefqdn.";
+
+    when(lookupFactory.sessionForName(fqdn)).thenReturn(testLookupSession());
+    when(xbillResolver.sendAsync(any(Message.class))).thenReturn(CompletableFuture.completedFuture(messageWithRCode(fqdn, Rcode.NXDOMAIN)));
+
+    assertThat(resolver.resolveAsync(fqdn).toCompletableFuture().get().isEmpty(), is(true));
+  }
+
+  @Test
   public void shouldReturnEmptyForHostNotFound() throws Exception {
     String fqdn = "thefqdn.";
 
-    when(lookupFactory.forName(fqdn)).thenReturn(testLookup());
-    when(xbillResolver.sendAsync(any(Message.class))).thenReturn(CompletableFuture.completedFuture(messageWithRCode(fqdn, Rcode.NXDOMAIN)));
+    when(lookupFactory.forName(fqdn)).thenReturn(testLookup(fqdn));
+    when(xbillResolver.send(any(Message.class))).thenReturn(messageWithRCode(fqdn, Rcode.NXDOMAIN));
 
-    assertThat(resolver.resolve(fqdn).toCompletableFuture().get().isEmpty(), is(true));
+    assertThat(resolver.resolve(fqdn).isEmpty(), is(true));
   }
 
   // not testing for type not found, as I don't know how to set that up...
@@ -125,9 +147,9 @@ public class XBillDnsSrvResolverTest {
     return result;
   }
 
-  private void setupResponseForQuery(String queryFqdn, String responseFqdn, String... results)
+  private void setupResponseForQueryAsync(String queryFqdn, String responseFqdn, String... results)
       throws IOException {
-    when(lookupFactory.forName(queryFqdn)).thenReturn(testLookup());
+    when(lookupFactory.sessionForName(queryFqdn)).thenReturn(testLookupSession());
     if (queryFqdn.equals(responseFqdn)) {
       when(xbillResolver.sendAsync(any(Message.class)))
           .thenReturn(CompletableFuture.completedFuture(messageWithNodes(responseFqdn, results)));
@@ -137,8 +159,23 @@ public class XBillDnsSrvResolverTest {
     }
   }
 
-  private LookupSession testLookup() {
+  private void setupResponseForQuery(String queryFqdn, String responseFqdn, String... results)
+          throws IOException {
+    when(lookupFactory.forName(queryFqdn)).thenReturn(testLookup(queryFqdn));
+    when(xbillResolver.send(any(Message.class)))
+            .thenReturn(messageWithNodes(responseFqdn, results));
+  }
+
+  private LookupSession testLookupSession() {
     return LookupSession.builder().resolver(xbillResolver).build();
+  }
+
+  private Lookup testLookup(String thefqdn) throws TextParseException {
+    Lookup result = new Lookup(thefqdn, Type.SRV);
+
+    result.setResolver(xbillResolver);
+
+    return result;
   }
 
   private Message messageWithNodes(String query, String[] names) throws TextParseException {

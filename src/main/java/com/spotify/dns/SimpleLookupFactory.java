@@ -26,6 +26,7 @@ import org.xbill.DNS.lookup.LookupSession;
 /** A LookupFactory that always returns new instances. */
 public class SimpleLookupFactory implements LookupFactory {
   private final LookupSession session;
+  private final Resolver resolver;
 
   public SimpleLookupFactory() {
     this(Lookup.getDefaultResolver());
@@ -33,10 +34,24 @@ public class SimpleLookupFactory implements LookupFactory {
 
   public SimpleLookupFactory(Resolver resolver) {
     session = LookupSession.builder().resolver(resolver).build();
+    this.resolver = resolver;
   }
 
   @Override
-  public LookupSession forName(String fqdn) {
+  public Lookup forName(String fqdn) {
+    try {
+      final Lookup lookup = new Lookup(fqdn, Type.SRV, DClass.IN);
+      if (resolver != null) {
+        lookup.setResolver(resolver);
+      }
+      return lookup;
+    } catch (TextParseException e) {
+      throw new DnsException("unable to create lookup for name: " + fqdn, e);
+    }
+  }
+
+  @Override
+  public LookupSession sessionForName(String fqdn) {
     return session;
   }
 }

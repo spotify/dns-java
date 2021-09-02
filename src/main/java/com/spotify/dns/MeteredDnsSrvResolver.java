@@ -37,15 +37,40 @@ class MeteredDnsSrvResolver implements DnsSrvResolver {
     this.reporter = requireNonNull(reporter, "reporter");
   }
 
+    @Override
+    public List<LookupResult> resolve(String fqdn) {
+        // Only catch and report RuntimeException to avoid Error's since that would
+        // most likely only aggravate any condition that causes them to be thrown.
+
+        final DnsTimingContext resolveTimer = reporter.resolveTimer();
+
+        final List<LookupResult> result;
+
+        try {
+            result = delegate.resolve(fqdn);
+        } catch (RuntimeException error) {
+            reporter.reportFailure(error);
+            throw error;
+        } finally {
+            resolveTimer.stop();
+        }
+
+        if (result.isEmpty()) {
+            reporter.reportEmpty();
+        }
+
+        return result;
+    }
+
   @Override
-  public CompletionStage<List<LookupResult>> resolve(String fqdn) {
+  public CompletionStage<List<LookupResult>> resolveAsync(String fqdn) {
     // Only catch and report RuntimeException to avoid Error's since that would
     // most likely only aggravate any condition that causes them to be thrown.
 
     final DnsTimingContext resolveTimer = reporter.resolveTimer();
 
     return delegate
-        .resolve(fqdn)
+        .resolveAsync(fqdn)
         .handle(
             (result, error) -> {
               resolveTimer.stop();

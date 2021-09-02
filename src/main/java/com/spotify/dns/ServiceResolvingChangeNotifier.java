@@ -87,7 +87,7 @@ class ServiceResolvingChangeNotifier<T> extends AbstractChangeNotifier<T>
       return;
     }
 
-    resolver.resolve(fqdn).whenComplete((nodes, e) -> {
+    resolver.resolveAsync(fqdn).whenComplete((nodes, e) -> {
       if (e instanceof DnsException) {
         if (errorHandler != null) {
           errorHandler.handle(fqdn, (DnsException) e);

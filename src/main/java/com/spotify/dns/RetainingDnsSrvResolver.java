@@ -47,9 +47,35 @@ class RetainingDnsSrvResolver implements DnsSrvResolver {
   }
 
   @Override
-  public CompletionStage<List<LookupResult>> resolve(final String fqdn) {
+  public List<LookupResult> resolve(final String fqdn) {
     requireNonNull(fqdn, "fqdn");
-    return delegate.resolve(fqdn).handle((nodes, e) -> {
+
+    try {
+      final List<LookupResult> nodes = delegate.resolve(fqdn);
+
+      // No nodes resolved? Return stale data.
+      if (nodes.isEmpty()) {
+        List<LookupResult> cached = cache.getIfPresent(fqdn);
+        return (cached != null) ? cached : nodes;
+      }
+
+      cache.put(fqdn, nodes);
+
+      return nodes;
+    } catch (Exception e) {
+      if (cache.getIfPresent(fqdn) != null) {
+        return cache.getIfPresent(fqdn);
+      }
+
+      throwIfUnchecked(e);
+      throw new RuntimeException(e);
+    }
+  }
+
+  @Override
+  public CompletionStage<List<LookupResult>> resolveAsync(final String fqdn) {
+    requireNonNull(fqdn, "fqdn");
+    return delegate.resolveAsync(fqdn).handle((nodes, e) -> {
       if (e == null){
         // No nodes resolved? Return stale data.
         if (nodes.isEmpty()) {

@@ -22,12 +22,7 @@ import com.google.common.collect.ImmutableList;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.xbill.DNS.DClass;
-import org.xbill.DNS.Name;
-import org.xbill.DNS.Record;
-import org.xbill.DNS.SRVRecord;
-import org.xbill.DNS.TextParseException;
-import org.xbill.DNS.Type;
+import org.xbill.DNS.*;
 import org.xbill.DNS.lookup.LookupSession;
 import org.xbill.DNS.lookup.NoSuchDomainException;
 import org.xbill.DNS.lookup.NoSuchRRSetException;
@@ -50,8 +45,29 @@ class XBillDnsSrvResolver implements DnsSrvResolver {
   }
 
   @Override
-  public CompletionStage<List<LookupResult>> resolve(final String fqdn) {
-    LookupSession lookup = lookupFactory.forName(fqdn);
+  public List<LookupResult> resolve(final String fqdn) {
+    Lookup lookup = lookupFactory.forName(fqdn);
+    Record[] queryResult = lookup.run();
+
+    switch (lookup.getResult()) {
+      case Lookup.SUCCESSFUL:
+        return toLookupResults(queryResult);
+      case Lookup.HOST_NOT_FOUND:
+        // fallthrough
+      case Lookup.TYPE_NOT_FOUND:
+        LOG.warn("No results returned for query '{}'; result from XBill: {} - {}",
+                fqdn, lookup.getResult(), lookup.getErrorString());
+        return ImmutableList.of();
+      default:
+        throw new DnsException(
+                String.format("Lookup of '%s' failed with code: %d - %s ",
+                        fqdn, lookup.getResult(), lookup.getErrorString()));
+    }
+  }
+
+  @Override
+  public CompletionStage<List<LookupResult>> resolveAsync(final String fqdn) {
+    LookupSession lookup = lookupFactory.sessionForName(fqdn);
     Name name;
     try {
       name = Name.fromString(fqdn);
@@ -89,6 +105,25 @@ class XBillDnsSrvResolver implements DnsSrvResolver {
                                         srvRecord.getPriority(),
                                         srvRecord.getWeight(),
                                         srvRecord.getTTL()));
+      }
+    }
+
+    return builder.build();
+  }
+
+  private static List<LookupResult> toLookupResults(Record[] queryResult) {
+    ImmutableList.Builder<LookupResult> builder = ImmutableList.builder();
+
+    if (queryResult != null) {
+      for (Record record : queryResult) {
+        if (record instanceof SRVRecord) {
+          SRVRecord srvRecord = (SRVRecord) record;
+          builder.add(LookupResult.create(srvRecord.getTarget().toString(),
+                  srvRecord.getPort(),
+                  srvRecord.getPriority(),
+                  srvRecord.getWeight(),
+                  srvRecord.getTTL()));
+        }
       }
     }
 

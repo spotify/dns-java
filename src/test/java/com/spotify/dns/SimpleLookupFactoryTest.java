@@ -48,9 +48,12 @@ public class SimpleLookupFactoryTest {
 
   @Test
   public void shouldNotCreateNewLookupsEachTime() {
-    LookupSession first = factory.forName("some.other.name.");
-    LookupSession second = factory.forName("some.other.name.");
+    Lookup first = factory.forName("some.other.name.");
+    LookupSession firstSession = factory.sessionForName("some.other.name.");
+    Lookup second = factory.forName("some.other.name.");
+    LookupSession secondSession = factory.sessionForName("some.other.name.");
 
     assertThat(first == second, is(true));
+    assertThat(firstSession == secondSession, is(true));
   }
 }
