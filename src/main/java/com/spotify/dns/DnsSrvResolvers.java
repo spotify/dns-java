@@ -16,23 +16,26 @@
 
 package com.spotify.dns;
 
-import static java.util.concurrent.TimeUnit.HOURS;
-import static java.util.concurrent.TimeUnit.SECONDS;
-
 import com.spotify.dns.statistics.DnsReporter;
-import java.net.UnknownHostException;
-import java.time.Duration;
-import java.util.List;
 import org.xbill.DNS.ExtendedResolver;
 import org.xbill.DNS.Resolver;
 
-/**
- * Provides builders for configuring and instantiating {@link DnsSrvResolver}s.
- */
+import java.net.UnknownHostException;
+import java.time.Duration;
+import java.util.List;
+
+import static java.util.concurrent.TimeUnit.HOURS;
+import static java.util.concurrent.TimeUnit.SECONDS;
+
+/** Provides builders for configuring and instantiating {@link DnsSrvResolver}s. */
 public final class DnsSrvResolvers {
 
   private static final int DEFAULT_DNS_TIMEOUT_SECONDS = 5;
   private static final int DEFAULT_RETENTION_DURATION_HOURS = 2;
+
+  private DnsSrvResolvers() {
+    // prevent instantiation
+  }
 
   public static DnsSrvResolverBuilder newBuilder() {
     return new DnsSrvResolverBuilder();
@@ -46,14 +49,17 @@ public final class DnsSrvResolvers {
     private final long dnsLookupTimeoutMillis;
     private final long retentionDurationMillis;
     private final List<String> servers;
+    private final Resolver resolver;
 
     private DnsSrvResolverBuilder() {
-      this(null,
-           false,
-           false,
-           SECONDS.toMillis(DEFAULT_DNS_TIMEOUT_SECONDS),
-           HOURS.toMillis(DEFAULT_RETENTION_DURATION_HOURS),
-           null);
+      this(
+          null,
+          false,
+          false,
+          SECONDS.toMillis(DEFAULT_DNS_TIMEOUT_SECONDS),
+          HOURS.toMillis(DEFAULT_RETENTION_DURATION_HOURS),
+          null,
+          null);
     }
 
     private DnsSrvResolverBuilder(
@@ -62,26 +68,34 @@ public final class DnsSrvResolvers {
         boolean cacheLookups,
         long dnsLookupTimeoutMillis,
         long retentionDurationMillis,
-        List<String> servers) {
+        List<String> servers,
+        Resolver resolver) {
       this.reporter = reporter;
       this.retainData = retainData;
       this.cacheLookups = cacheLookups;
       this.dnsLookupTimeoutMillis = dnsLookupTimeoutMillis;
       this.retentionDurationMillis = retentionDurationMillis;
       this.servers = servers;
+      this.resolver = resolver;
     }
 
     public DnsSrvResolver build() {
       Resolver resolver;
-      try {
-        // If the user specified DNS servers, create a new ExtendedResolver which uses them.
-        // Otherwise, use the default constructor. That will use the servers in ResolverConfig,
-        // or if that's empty, localhost.
-        resolver = servers == null ?
-                   new ExtendedResolver() :
-                   new ExtendedResolver(servers.toArray(new String[servers.size()]));
-      } catch (UnknownHostException e) {
-        throw new RuntimeException(e);
+
+      if(this.resolver != null) {
+        resolver = this.resolver;
+      } else {
+        try {
+          // If the user specified DNS servers, create a new ExtendedResolver which uses them.
+          // Otherwise, use the default constructor. That will use the servers in ResolverConfig,
+          // or if that's empty, localhost.
+          resolver =
+              servers == null
+                  ? new ExtendedResolver()
+                  : new ExtendedResolver(servers.toArray(new String[servers.size()]));
+        } catch (UnknownHostException e) {
+          throw new RuntimeException(e);
+        }
       }
 
       // Configure the Resolver to use our timeouts.
@@ -108,46 +122,97 @@ public final class DnsSrvResolvers {
     }
 
     public DnsSrvResolverBuilder metered(DnsReporter reporter) {
-      return new DnsSrvResolverBuilder(reporter, retainData, cacheLookups, dnsLookupTimeoutMillis,
-                                       retentionDurationMillis, servers);
+      return new DnsSrvResolverBuilder(
+          reporter,
+          retainData,
+          cacheLookups,
+          dnsLookupTimeoutMillis,
+          retentionDurationMillis,
+          servers,
+          resolver);
     }
 
     public DnsSrvResolverBuilder retainingDataOnFailures(boolean retainData) {
-      return new DnsSrvResolverBuilder(reporter, retainData, cacheLookups, dnsLookupTimeoutMillis,
-                                       retentionDurationMillis, servers);
+      return new DnsSrvResolverBuilder(
+          reporter,
+          retainData,
+          cacheLookups,
+          dnsLookupTimeoutMillis,
+          retentionDurationMillis,
+          servers,
+          resolver);
     }
 
     public DnsSrvResolverBuilder cachingLookups(boolean cacheLookups) {
-      return new DnsSrvResolverBuilder(reporter, retainData, cacheLookups, dnsLookupTimeoutMillis,
-                                       retentionDurationMillis, servers);
+      return new DnsSrvResolverBuilder(
+          reporter,
+          retainData,
+          cacheLookups,
+          dnsLookupTimeoutMillis,
+          retentionDurationMillis,
+          servers,
+          resolver);
     }
 
     public DnsSrvResolverBuilder dnsLookupTimeoutMillis(long dnsLookupTimeoutMillis) {
-      return new DnsSrvResolverBuilder(reporter, retainData, cacheLookups, dnsLookupTimeoutMillis,
-                                       retentionDurationMillis, servers);
+      return new DnsSrvResolverBuilder(
+          reporter,
+          retainData,
+          cacheLookups,
+          dnsLookupTimeoutMillis,
+          retentionDurationMillis,
+          servers,
+          resolver);
     }
 
     public DnsSrvResolverBuilder retentionDurationMillis(long retentionDurationMillis) {
-      return new DnsSrvResolverBuilder(reporter, retainData, cacheLookups, dnsLookupTimeoutMillis,
-                                       retentionDurationMillis, servers);
+      return new DnsSrvResolverBuilder(
+          reporter,
+          retainData,
+          cacheLookups,
+          dnsLookupTimeoutMillis,
+          retentionDurationMillis,
+          servers,
+          resolver);
     }
 
     /**
      * Allows the user to specify which DNS servers should be used to perform DNS lookups. Servers
      * can be specified using either hostname or IP address. If not specified, the underlying DNS
-     * library will determine which servers to use according to the steps documented in
-     * <a href="https://github.com/dnsjava/dnsjava/blob/master/org/xbill/DNS/ResolverConfig.java">
+     * library will determine which servers to use according to the steps documented in <a
+     * href="https://github.com/dnsjava/dnsjava/blob/master/org/xbill/DNS/ResolverConfig.java">
      * ResolverConfig.java</a>
+     *
      * @param servers the DNS servers to use
      * @return this builder
      */
     public DnsSrvResolverBuilder servers(List<String> servers) {
-      return new DnsSrvResolverBuilder(reporter, retainData, cacheLookups, dnsLookupTimeoutMillis,
-                                       retentionDurationMillis, servers);
+      return new DnsSrvResolverBuilder(
+          reporter,
+          retainData,
+          cacheLookups,
+          dnsLookupTimeoutMillis,
+          retentionDurationMillis,
+          servers,
+          resolver);
     }
-  }
 
-  private DnsSrvResolvers() {
-    // prevent instantiation
+    /**
+     * Allows the user to specify a custom resolver to perform the actual DNS lookup, useful for
+     * things like testing & custom protocols
+     *
+     * @param resolver
+     * @return
+     */
+    public DnsSrvResolverBuilder resolver(Resolver resolver) {
+      return new DnsSrvResolverBuilder(
+          reporter,
+          retainData,
+          cacheLookups,
+          dnsLookupTimeoutMillis,
+          retentionDurationMillis,
+          servers,
+          resolver);
+    }
   }
 }
