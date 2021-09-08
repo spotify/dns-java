@@ -4,7 +4,7 @@
     <groupId>com.spotify</groupId>
     <artifactId>dns</artifactId>
     <packaging>bundle</packaging>
-    <version>3.2.3-SNAPSHOT</version>
+    <version>3.2.3-lookup-factory-SNAPSHOT</version>
     <name>Spotify DNS wrapper library</name>
     <description>A thin wrapper around dnsjava for some features related to SRV lookups.
     </description>
