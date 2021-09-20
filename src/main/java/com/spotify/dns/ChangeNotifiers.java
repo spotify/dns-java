@@ -16,6 +16,8 @@
 
 package com.spotify.dns;
 
+import com.google.common.collect.Sets;
+
 import static com.spotify.dns.ChangeNotifierFactory.RunnableChangeNotifier;
 import static java.util.Objects.requireNonNull;
 
@@ -91,7 +93,7 @@ public final class ChangeNotifiers {
    * @return A notifier with a static set of records
    */
   public static <T> ChangeNotifier<T> staticRecords(T... records) {
-    return staticRecords(Set.of(records));
+    return staticRecords(Sets.newHashSet(records));
   }
 
   public static <T> ChangeNotifier<T> staticRecords(Set<T> records) {
@@ -118,8 +120,8 @@ public final class ChangeNotifiers {
 
   /**
    * @deprecated Use {@link #direct(java.util.function.Supplier)}
+   * deprecated since version 3.2.0
    */
-  @Deprecated(since = "3.2.0")
   public static <T> RunnableChangeNotifier<T> direct(com.google.common.base.Supplier<Set<T>> recordsSupplier) {
     return new DirectChangeNotifier<>(recordsSupplier);
   }
