@@ -6,10 +6,13 @@ import static org.hamcrest.Matchers.is;
 
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.Test;
+import org.xbill.DNS.lookup.NoSuchDomainException;
 
 public class DnsSrvWatchersTest {
 
@@ -80,6 +83,15 @@ public class DnsSrvWatchersTest {
         return List.of(result);
       } else {
         return null;
+      }
+    }
+
+    @Override
+    public CompletionStage<List<LookupResult>> resolveAsync(String fqdn) {
+      if (this.fqdn.equals(fqdn)) {
+        return CompletableFuture.completedFuture(List.of(result));
+      } else {
+        return CompletableFuture.failedFuture(new DnsException(this.fqdn + " != " + fqdn));
       }
     }
   }

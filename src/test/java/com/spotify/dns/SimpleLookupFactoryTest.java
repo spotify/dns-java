@@ -27,6 +27,9 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.xbill.DNS.Lookup;
 import org.xbill.DNS.TextParseException;
+import org.xbill.DNS.lookup.LookupSession;
+
+import java.util.concurrent.ForkJoinPool;
 
 
 public class SimpleLookupFactoryTest {
@@ -37,7 +40,7 @@ public class SimpleLookupFactoryTest {
 
   @Before
   public void setUp() {
-    factory = new SimpleLookupFactory();
+    factory = new SimpleLookupFactory(ForkJoinPool.commonPool());
   }
 
   @Test
@@ -46,7 +49,12 @@ public class SimpleLookupFactoryTest {
   }
 
   @Test
-  public void shouldCreateNewLookupsEachTime() {
+  public void shouldCreateLookupSession() {
+    assertThat(factory.sessionForName("some.domain."), is(notNullValue()));
+  }
+
+  @Test
+  public void shouldNotCreateNewLookupsEachTime() {
     Lookup first = factory.forName("some.other.name.");
     Lookup second = factory.forName("some.other.name.");
 
@@ -54,10 +62,10 @@ public class SimpleLookupFactoryTest {
   }
 
   @Test
-  public void shouldRethrowXBillExceptions() {
-    thrown.expect(DnsException.class);
-    thrown.expectCause(isA(TextParseException.class));
+  public void shouldCreateNewLookupSessionEachTime() {
+    LookupSession firstSession = factory.sessionForName("some.other.name.");
+    LookupSession secondSession = factory.sessionForName("some.other.name.");
 
-    factory.forName("bad\\1 name");
+    assertThat(firstSession == secondSession, is(true));
   }
 }

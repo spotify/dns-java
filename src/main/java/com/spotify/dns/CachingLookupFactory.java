@@ -23,11 +23,13 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.util.concurrent.UncheckedExecutionException;
 import java.util.concurrent.ExecutionException;
 import org.xbill.DNS.Lookup;
+import org.xbill.DNS.lookup.LookupSession;
 
 /**
  * Caches Lookup instances using a per-thread cache; this is so that different threads will never
  * get the same instance of Lookup. Lookup instances are not thread-safe.
  */
+@Deprecated
 class CachingLookupFactory implements LookupFactory {
   private final LookupFactory delegate;
   private final ThreadLocal<Cache<String, Lookup>> cacheHolder;
@@ -50,5 +52,10 @@ class CachingLookupFactory implements LookupFactory {
     } catch (UncheckedExecutionException e) {
       throw new DnsException(e);
     }
+  }
+
+  @Override
+  public LookupSession sessionForName(String fqdn) {
+    throw new java.lang.UnsupportedOperationException("Session not supported with caching lookup");
   }
 }

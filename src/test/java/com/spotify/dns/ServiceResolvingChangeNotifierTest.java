@@ -30,6 +30,7 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 import org.junit.Before;
 import org.junit.Test;
@@ -61,8 +62,9 @@ public class ServiceResolvingChangeNotifierTest {
 
     LookupResult result1 = result("host", 1234);
     LookupResult result2 = result("host", 4321);
-    when(resolver.resolve(FQDN))
-        .thenReturn(of(result1), of(result1, result2));
+    when(resolver.resolve(FQDN)).thenReturn(of(result1), of(result1, result2));
+    when(resolver.resolveAsync(FQDN))
+        .thenReturn(CompletableFuture.completedFuture(of(result1)), CompletableFuture.completedFuture(of(result1, result2)));
 
     sut.run();
     sut.run();
@@ -94,7 +96,9 @@ public class ServiceResolvingChangeNotifierTest {
 
     LookupResult result = result("host", 1234);
     when(resolver.resolve(FQDN))
-        .thenReturn(of(result));
+            .thenReturn(of(result));
+    when(resolver.resolveAsync(FQDN))
+        .thenReturn(CompletableFuture.completedFuture(of(result)));
 
     sut.run();
     sut.setListener(listener, true);
@@ -118,7 +122,9 @@ public class ServiceResolvingChangeNotifierTest {
     LookupResult result1 = result("host", 1234);
     LookupResult result2 = result("host", 4321);
     when(resolver.resolve(FQDN))
-        .thenReturn(of(result1), of(result1, result2));
+            .thenReturn(of(result1), of(result1, result2));
+    when(resolver.resolveAsync(FQDN))
+        .thenReturn(CompletableFuture.completedFuture(of(result1)), CompletableFuture.completedFuture(of(result1, result2)));
 
     sut.run();
     sut.setListener(listener, true);
@@ -152,7 +158,9 @@ public class ServiceResolvingChangeNotifierTest {
     LookupResult result1 = result("host", 1234);
     LookupResult result2 = result("host", 4321);
     when(resolver.resolve(FQDN))
-        .thenReturn(of(result1), of(result1, result2));
+            .thenReturn(of(result1), of(result1, result2));
+    when(resolver.resolveAsync(FQDN))
+        .thenReturn(CompletableFuture.completedFuture(of(result1)), CompletableFuture.completedFuture(of(result1, result2)));
 
     sut.run();
     sut.run();
@@ -189,10 +197,15 @@ public class ServiceResolvingChangeNotifierTest {
     ChangeNotifier.Listener<String> listener = mock(ChangeNotifier.Listener.class);
 
     when(resolver.resolve(FQDN))
-        .thenReturn(of(
+            .thenReturn(of(
+                    result("host1", 1234),
+                    result("host2", 1234),
+                    result("host3", 1234)));
+    when(resolver.resolveAsync(FQDN))
+        .thenReturn(CompletableFuture.completedFuture(of(
             result("host1", 1234),
             result("host2", 1234),
-            result("host3", 1234)));
+            result("host3", 1234))));
 
     when(f.apply(any(LookupResult.class)))
         .thenReturn("foo", null, "bar");
@@ -213,7 +226,9 @@ public class ServiceResolvingChangeNotifierTest {
 
     DnsException exception = new DnsException("something wrong");
     when(resolver.resolve(FQDN))
-        .thenThrow(exception);
+            .thenThrow(exception);
+    when(resolver.resolveAsync(FQDN))
+        .thenReturn(CompletableFuture.failedFuture(exception));
 
     sut.setListener(listener, false);
     sut.run();

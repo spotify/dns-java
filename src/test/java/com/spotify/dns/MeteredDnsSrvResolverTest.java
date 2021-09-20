@@ -26,6 +26,9 @@ import static org.mockito.Mockito.when;
 import com.spotify.dns.statistics.DnsReporter;
 import com.spotify.dns.statistics.DnsTimingContext;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -80,10 +83,32 @@ public class MeteredDnsSrvResolverTest {
   }
 
   @Test
+  public void shouldCountSuccessfulAsync() throws Exception {
+    CompletableFuture<List<LookupResult>> completedNotEmpty = CompletableFuture.completedFuture(NOT_EMPTY);
+    when(delegate.resolveAsync(FQDN)).thenReturn(completedNotEmpty);
+
+    resolver.resolveAsync(FQDN).toCompletableFuture().get();
+
+    verify(reporter, never()).reportEmpty();
+    verify(reporter, never()).reportFailure(RUNTIME_EXCEPTION);
+  }
+
+  @Test
   public void shouldReportEmpty() throws Exception {
     when(delegate.resolve(FQDN)).thenReturn(EMPTY);
 
     resolver.resolve(FQDN);
+
+    verify(reporter).reportEmpty();
+    verify(reporter, never()).reportFailure(RUNTIME_EXCEPTION);
+  }
+
+  @Test
+  public void shouldReportEmptyAsync() throws Exception {
+    CompletableFuture<List<LookupResult>> completedEmpty = CompletableFuture.completedFuture(EMPTY);
+    when(delegate.resolveAsync(FQDN)).thenReturn(completedEmpty);
+
+    resolver.resolveAsync(FQDN).toCompletableFuture().get();
 
     verify(reporter).reportEmpty();
     verify(reporter, never()).reportFailure(RUNTIME_EXCEPTION);
@@ -105,6 +130,21 @@ public class MeteredDnsSrvResolverTest {
   }
 
   @Test
+  public void shouldReportRuntimeExceptionAsync() throws Exception {
+    when(delegate.resolveAsync(FQDN)).thenReturn(CompletableFuture.failedFuture((RUNTIME_EXCEPTION)));
+
+    try {
+      resolver.resolveAsync(FQDN).toCompletableFuture().get();
+      fail("resolve should have thrown exception");
+    } catch(ExecutionException e) {
+      assertEquals(RUNTIME_EXCEPTION, e.getCause());
+    }
+
+    verify(reporter, never()).reportEmpty();
+    verify(reporter).reportFailure(RUNTIME_EXCEPTION);
+  }
+
+  @Test
   public void shouldNotReportError() throws Exception {
     when(delegate.resolve(FQDN)).thenThrow(ERROR);
 
@@ -113,6 +153,21 @@ public class MeteredDnsSrvResolverTest {
       fail("resolve should have thrown exception");
     } catch(Error e) {
       assertEquals(ERROR, e);
+    }
+
+    verify(reporter, never()).reportEmpty();
+    verify(reporter, never()).reportFailure(RUNTIME_EXCEPTION);
+  }
+
+  @Test
+  public void shouldNotReportErrorAsync() throws Exception {
+    when(delegate.resolveAsync(FQDN)).thenReturn(CompletableFuture.failedFuture(ERROR));
+
+    try {
+      resolver.resolveAsync(FQDN).toCompletableFuture().get();
+      fail("resolve should have thrown exception");
+    } catch(ExecutionException e) {
+      assertEquals(ERROR, e.getCause());
     }
 
     verify(reporter, never()).reportEmpty();

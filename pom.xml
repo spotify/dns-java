@@ -47,7 +47,7 @@
         <dependency>
             <groupId>dnsjava</groupId>
             <artifactId>dnsjava</artifactId>
-            <version>3.0.2</version>
+            <version>3.4.2</version>
         </dependency>
         <dependency>
             <groupId>com.google.guava</groupId>
@@ -57,7 +57,7 @@
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
-            <version>1.7.30</version>
+            <version>1.7.32</version>
         </dependency>
         <dependency>
             <groupId>junit</groupId>
@@ -242,9 +242,9 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.8.1</version>
                 <configuration>
-                    <release>9</release>
-                    <source>9</source>
-                    <target>9</target>
+                    <release>8</release>
+                    <source>8</source>
+                    <target>8</target>
                 </configuration>
             </plugin>
             <plugin>

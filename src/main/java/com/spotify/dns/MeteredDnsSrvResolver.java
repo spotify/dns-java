@@ -16,12 +16,14 @@
 
 package com.spotify.dns;
 
+import static com.google.common.base.Throwables.throwIfUnchecked;
 import static java.util.Objects.requireNonNull;
 
 import com.spotify.dns.statistics.DnsReporter;
 import com.spotify.dns.statistics.DnsTimingContext;
 
 import java.util.List;
+import java.util.concurrent.CompletionStage;
 
 /**
  * Tracks metrics for DnsSrvResolver calls.
@@ -35,28 +37,54 @@ class MeteredDnsSrvResolver implements DnsSrvResolver {
     this.reporter = requireNonNull(reporter, "reporter");
   }
 
+    @Override
+    public List<LookupResult> resolve(String fqdn) {
+        // Only catch and report RuntimeException to avoid Error's since that would
+        // most likely only aggravate any condition that causes them to be thrown.
+
+        final DnsTimingContext resolveTimer = reporter.resolveTimer();
+
+        final List<LookupResult> result;
+
+        try {
+            result = delegate.resolve(fqdn);
+        } catch (RuntimeException error) {
+            reporter.reportFailure(error);
+            throw error;
+        } finally {
+            resolveTimer.stop();
+        }
+
+        if (result.isEmpty()) {
+            reporter.reportEmpty();
+        }
+
+        return result;
+    }
+
   @Override
-  public List<LookupResult> resolve(String fqdn) {
+  public CompletionStage<List<LookupResult>> resolveAsync(String fqdn) {
     // Only catch and report RuntimeException to avoid Error's since that would
     // most likely only aggravate any condition that causes them to be thrown.
 
     final DnsTimingContext resolveTimer = reporter.resolveTimer();
 
-    final List<LookupResult> result;
+    return delegate
+        .resolveAsync(fqdn)
+        .handle(
+            (result, error) -> {
+              resolveTimer.stop();
+              if (error == null) {
+                if (result.isEmpty()) {
+                  reporter.reportEmpty();
+                }
 
-    try {
-      result = delegate.resolve(fqdn);
-    } catch (RuntimeException error) {
-      reporter.reportFailure(error);
-      throw error;
-    } finally {
-      resolveTimer.stop();
-    }
-
-    if (result.isEmpty()) {
-      reporter.reportEmpty();
-    }
-
-    return result;
+                return result;
+              } else {
+                reporter.reportFailure(error);
+                throwIfUnchecked(error);
+                throw new RuntimeException(error);
+              }
+            });
   }
 }
