@@ -45,5 +45,7 @@ public interface DnsSrvResolver {
    * @return a possibly empty list of matching records
    * @throws DnsException if there was an error doing the DNS lookup
    */
-  CompletionStage<List<LookupResult>> resolveAsync(String fqdn);
+  default CompletionStage<List<LookupResult>> resolveAsync(String fqdn) {
+    throw new java.lang.UnsupportedOperationException("Not implemented");
+  }
 }
