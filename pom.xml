@@ -313,7 +313,7 @@
                         <dependency>
                             <groupId>com.spotify</groupId>
                             <artifactId>${project.artifactId}</artifactId>
-                            <version>3.0.2</version>
+                            <version>3.3.0</version>
                         </dependency>
                     </oldVersion>
                     <newVersion>
@@ -322,6 +322,14 @@
                         </file>
                     </newVersion>
                     <parameter>
+                        <overrideCompatibilityChangeParameters>
+                            <overrideCompatibilityChangeParameter>
+                                <compatibilityChange>METHOD_ABSTRACT_NOW_DEFAULT</compatibilityChange>
+                                <binaryCompatible>true</binaryCompatible>
+                                <sourceCompatible>true</sourceCompatible>
+                                <semanticVersionLevel>PATCH</semanticVersionLevel>
+                            </overrideCompatibilityChangeParameter>
+                        </overrideCompatibilityChangeParameters>
                         <breakBuildOnBinaryIncompatibleModifications>true</breakBuildOnBinaryIncompatibleModifications>
                         <onlyBinaryIncompatible>true</onlyBinaryIncompatible>
                     </parameter>
