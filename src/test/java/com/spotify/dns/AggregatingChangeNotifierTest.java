@@ -21,22 +21,25 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
+
+import com.google.common.collect.Sets;
 import org.junit.Test;
 
 public class AggregatingChangeNotifierTest {
   @Test
   public void testEmptySet() {
     MyNotifier childNotifier = new MyNotifier();
-    AggregatingChangeNotifier<String> notifier = new AggregatingChangeNotifier<>(List.of(childNotifier));
+    AggregatingChangeNotifier<String> notifier = new AggregatingChangeNotifier<>(Arrays.asList(childNotifier));
 
     ChangeNotifier.Listener listener = mock(ChangeNotifier.Listener.class);
     notifier.setListener(listener, false);
 
     verify(listener, never()).onChange(any(ChangeNotifier.ChangeNotification.class));
 
-    childNotifier.set(Set.of());
+    childNotifier.set(Sets.newHashSet());
     verifyNoMoreInteractions(listener);
 
   }

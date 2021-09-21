@@ -26,6 +26,8 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
 import java.util.Set;
+
+import com.google.common.collect.Sets;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -51,10 +53,10 @@ public class AbstractChangeNotifierTest {
   public void setUp() {
     MockitoAnnotations.initMocks(this);
 
-    sut = new AbstractChangeNotifier<>() {
+    sut = new AbstractChangeNotifier<String>() {
       @Override
       public Set<String> current() {
-        return Set.of("foo", "bar");
+        return Sets.newHashSet("foo", "bar");
       }
 
       @Override

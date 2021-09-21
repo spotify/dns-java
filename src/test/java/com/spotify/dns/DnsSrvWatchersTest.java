@@ -4,6 +4,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.is;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -80,7 +81,7 @@ public class DnsSrvWatchersTest {
     @Override
     public List<LookupResult> resolve(String fqdn) {
       if (this.fqdn.equals(fqdn)) {
-        return List.of(result);
+        return Arrays.asList(result);
       } else {
         return null;
       }
@@ -89,9 +90,9 @@ public class DnsSrvWatchersTest {
     @Override
     public CompletionStage<List<LookupResult>> resolveAsync(String fqdn) {
       if (this.fqdn.equals(fqdn)) {
-        return CompletableFuture.completedFuture(List.of(result));
+        return CompletableFuture.completedFuture(Arrays.asList(result));
       } else {
-        return CompletableFuture.failedFuture(new DnsException(this.fqdn + " != " + fqdn));
+        return DnsTestUtil.failedFuture(new DnsException(this.fqdn + " != " + fqdn));
       }
     }
   }

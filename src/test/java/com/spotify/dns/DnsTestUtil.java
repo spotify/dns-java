@@ -17,6 +17,7 @@
 package com.spotify.dns;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -28,5 +29,23 @@ public class DnsTestUtil {
     return Stream.of(nodeNames)
         .map(input -> LookupResult.create(input, 8080, 1, 2, 999))
         .collect(Collectors.toList());
+  }
+
+  /**
+   * method to replace CompletableFuture.failedFuture() from Java 9 in Java 8
+   */
+  static CompletableFuture<List<LookupResult>> failedFuture(Exception ex) {
+    CompletableFuture<List<LookupResult>> future = new CompletableFuture<>();
+    future.completeExceptionally(ex);
+    return future;
+  }
+
+  /**
+   * method to replace CompletableFuture.failedFuture() from Java 9 in Java 8
+   */
+  static CompletableFuture<List<LookupResult>> failedFuture(Error error) {
+    CompletableFuture<List<LookupResult>> future = new CompletableFuture<>();
+    future.completeExceptionally(error);
+    return future;
   }
 }
