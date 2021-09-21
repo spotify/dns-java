@@ -223,7 +223,7 @@ public class ServiceResolvingChangeNotifierTest {
 
   @Test
   @SuppressWarnings("unchecked")
-  public void shouldCallErrorHandlerOnResolveErrors() throws ExecutionException, InterruptedException {
+  public void shouldCallErrorHandlerOnResolveErrors() {
     Function<LookupResult, String> f = mock(Function.class);
     ChangeNotifierFactory.RunnableChangeNotifier<String> sut = createTransformingNotifier(f);
     ChangeNotifier.Listener<String> listener = mock(ChangeNotifier.Listener.class);
