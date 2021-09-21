@@ -16,7 +16,6 @@
 
 package com.spotify.dns;
 
-import static java.util.List.of;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.junit.Assert.assertThat;
@@ -29,8 +28,10 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
 import org.junit.Before;
 import org.junit.Test;
@@ -62,9 +63,10 @@ public class ServiceResolvingChangeNotifierTest {
 
     LookupResult result1 = result("host", 1234);
     LookupResult result2 = result("host", 4321);
-    when(resolver.resolve(FQDN)).thenReturn(of(result1), of(result1, result2));
+    when(resolver.resolve(FQDN)).thenReturn(Arrays.asList(result1), Arrays.asList(result1, result2));
     when(resolver.resolveAsync(FQDN))
-        .thenReturn(CompletableFuture.completedFuture(of(result1)), CompletableFuture.completedFuture(of(result1, result2)));
+        .thenReturn(CompletableFuture.completedFuture(Arrays.asList(result1)),
+                CompletableFuture.completedFuture(Arrays.asList(result1, result2)));
 
     sut.run();
     sut.run();
@@ -96,9 +98,9 @@ public class ServiceResolvingChangeNotifierTest {
 
     LookupResult result = result("host", 1234);
     when(resolver.resolve(FQDN))
-            .thenReturn(of(result));
+            .thenReturn(Arrays.asList(result));
     when(resolver.resolveAsync(FQDN))
-        .thenReturn(CompletableFuture.completedFuture(of(result)));
+        .thenReturn(CompletableFuture.completedFuture(Arrays.asList(result)));
 
     sut.run();
     sut.setListener(listener, true);
@@ -122,9 +124,10 @@ public class ServiceResolvingChangeNotifierTest {
     LookupResult result1 = result("host", 1234);
     LookupResult result2 = result("host", 4321);
     when(resolver.resolve(FQDN))
-            .thenReturn(of(result1), of(result1, result2));
+            .thenReturn(Arrays.asList(result1), Arrays.asList(result1, result2));
     when(resolver.resolveAsync(FQDN))
-        .thenReturn(CompletableFuture.completedFuture(of(result1)), CompletableFuture.completedFuture(of(result1, result2)));
+        .thenReturn(CompletableFuture.completedFuture(Arrays.asList(result1)),
+                CompletableFuture.completedFuture(Arrays.asList(result1, result2)));
 
     sut.run();
     sut.setListener(listener, true);
@@ -158,9 +161,10 @@ public class ServiceResolvingChangeNotifierTest {
     LookupResult result1 = result("host", 1234);
     LookupResult result2 = result("host", 4321);
     when(resolver.resolve(FQDN))
-            .thenReturn(of(result1), of(result1, result2));
+            .thenReturn(Arrays.asList(result1), Arrays.asList(result1, result2));
     when(resolver.resolveAsync(FQDN))
-        .thenReturn(CompletableFuture.completedFuture(of(result1)), CompletableFuture.completedFuture(of(result1, result2)));
+        .thenReturn(CompletableFuture.completedFuture(Arrays.asList(result1)),
+                CompletableFuture.completedFuture(Arrays.asList(result1, result2)));
 
     sut.run();
     sut.run();
@@ -197,12 +201,12 @@ public class ServiceResolvingChangeNotifierTest {
     ChangeNotifier.Listener<String> listener = mock(ChangeNotifier.Listener.class);
 
     when(resolver.resolve(FQDN))
-            .thenReturn(of(
+            .thenReturn(Arrays.asList(
                     result("host1", 1234),
                     result("host2", 1234),
                     result("host3", 1234)));
     when(resolver.resolveAsync(FQDN))
-        .thenReturn(CompletableFuture.completedFuture(of(
+        .thenReturn(CompletableFuture.completedFuture(Arrays.asList(
             result("host1", 1234),
             result("host2", 1234),
             result("host3", 1234))));
@@ -219,7 +223,7 @@ public class ServiceResolvingChangeNotifierTest {
 
   @Test
   @SuppressWarnings("unchecked")
-  public void shouldCallErrorHandlerOnResolveErrors() {
+  public void shouldCallErrorHandlerOnResolveErrors() throws ExecutionException, InterruptedException {
     Function<LookupResult, String> f = mock(Function.class);
     ChangeNotifierFactory.RunnableChangeNotifier<String> sut = createTransformingNotifier(f);
     ChangeNotifier.Listener<String> listener = mock(ChangeNotifier.Listener.class);
@@ -228,7 +232,7 @@ public class ServiceResolvingChangeNotifierTest {
     when(resolver.resolve(FQDN))
             .thenThrow(exception);
     when(resolver.resolveAsync(FQDN))
-        .thenReturn(CompletableFuture.failedFuture(exception));
+        .thenReturn(DnsTestUtil.failedFuture(exception));
 
     sut.setListener(listener, false);
     sut.run();

@@ -32,6 +32,7 @@ import com.jayway.awaitility.Awaitility;
 import com.spotify.dns.statistics.DnsReporter;
 import com.spotify.dns.statistics.DnsTimingContext;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -121,7 +122,7 @@ public class DnsSrvResolversIT {
     final String server = new SimpleResolver().getAddress().getHostName();
     final DnsSrvResolver resolver = DnsSrvResolvers
         .newBuilder()
-        .servers(List.of(server))
+        .servers(Arrays.asList(server))
         .build();
     assertThat(resolver.resolve("_spotify-client._tcp.spotify.com").isEmpty(), is(false));
     assertThat(resolver.resolveAsync("_spotify-client._tcp.spotify.com").toCompletableFuture().get().isEmpty(), is(false));

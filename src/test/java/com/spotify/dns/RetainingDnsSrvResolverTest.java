@@ -125,7 +125,7 @@ public class RetainingDnsSrvResolverTest {
   public void shouldRetainDataOnFailureAsync() throws ExecutionException, InterruptedException {
     when(delegate.resolveAsync(FQDN))
         .thenReturn(CompletableFuture.completedFuture(nodes1))
-        .thenReturn(CompletableFuture.failedFuture(new DnsException("expected")));
+        .thenReturn(DnsTestUtil.failedFuture(new DnsException("expected")));
 
     resolver.resolveAsync(FQDN).toCompletableFuture().get();
 
@@ -145,7 +145,7 @@ public class RetainingDnsSrvResolverTest {
   @Test
   public void shouldThrowOnFailureAndNoDataAvailableAsync() throws ExecutionException, InterruptedException {
     DnsException cause = new DnsException("expected");
-    when(delegate.resolveAsync(FQDN)).thenReturn(CompletableFuture.failedFuture(cause));
+    when(delegate.resolveAsync(FQDN)).thenReturn(DnsTestUtil.failedFuture(cause));
 
     thrown.expect(ExecutionException.class);
     thrown.expectCause(is(cause));
@@ -186,7 +186,7 @@ public class RetainingDnsSrvResolverTest {
     DnsException cause = new DnsException("expected");
     when(delegate.resolveAsync(FQDN))
         .thenReturn(CompletableFuture.completedFuture(nodes()))
-        .thenReturn(CompletableFuture.failedFuture(cause));
+        .thenReturn(DnsTestUtil.failedFuture(cause));
 
     resolver.resolveAsync(FQDN).toCompletableFuture().get();
 
@@ -246,7 +246,7 @@ public class RetainingDnsSrvResolverTest {
     DnsException expected = new DnsException("expected");
     when(delegate.resolveAsync(FQDN))
         .thenReturn(CompletableFuture.completedFuture(nodes("aresult")))
-        .thenReturn(CompletableFuture.failedFuture(expected));
+        .thenReturn(DnsTestUtil.failedFuture(expected));
 
     resolver.resolveAsync(FQDN).toCompletableFuture().get();
 

@@ -131,7 +131,9 @@ public class MeteredDnsSrvResolverTest {
 
   @Test
   public void shouldReportRuntimeExceptionAsync() throws Exception {
-    when(delegate.resolveAsync(FQDN)).thenReturn(CompletableFuture.failedFuture((RUNTIME_EXCEPTION)));
+    CompletableFuture<List<LookupResult>> future = new CompletableFuture<>();
+    future.completeExceptionally(RUNTIME_EXCEPTION);
+    when(delegate.resolveAsync(FQDN)).thenReturn(future);
 
     try {
       resolver.resolveAsync(FQDN).toCompletableFuture().get();
@@ -161,7 +163,7 @@ public class MeteredDnsSrvResolverTest {
 
   @Test
   public void shouldNotReportErrorAsync() throws Exception {
-    when(delegate.resolveAsync(FQDN)).thenReturn(CompletableFuture.failedFuture(ERROR));
+    when(delegate.resolveAsync(FQDN)).thenReturn(DnsTestUtil.failedFuture(ERROR));
 
     try {
       resolver.resolveAsync(FQDN).toCompletableFuture().get();

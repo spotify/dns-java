@@ -3,6 +3,7 @@ package com.spotify.dns;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
@@ -29,7 +30,7 @@ public class DnsLookupPerformanceTest {
     public void runTest() throws InterruptedException {
         int numThreads = 3;
         final ExecutorService executorService = Executors.newFixedThreadPool(numThreads);
-        List<String> records = List.of(
+        List<String> records = Arrays.asList(
                 "_spotify-noop._http.services.gew1.spotify.net.",
                 "_spotify-noop._http.services.guc3.spotify.net.",
                 "_spotify-noop._http.services.gae2.spotify.net.",
