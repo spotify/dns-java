@@ -19,6 +19,7 @@ package com.spotify.dns;
 import static java.util.Objects.requireNonNull;
 
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Sets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -52,7 +53,7 @@ abstract class AbstractChangeNotifier<T> implements ChangeNotifier<T> {
       }
 
       if (fire) {
-        notifyListener(newChangeNotification(current(), Set.of()), true);
+        notifyListener(newChangeNotification(current(), Sets.newHashSet()), true);
       }
     } finally {
       lock.unlock();
