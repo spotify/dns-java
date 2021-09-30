@@ -95,7 +95,9 @@ public final class DnsSrvResolvers {
       final Duration timeoutDuration = Duration.ofMillis(dnsLookupTimeoutMillis);
       resolver.setTimeout(timeoutDuration);
 
-      LookupFactory lookupFactory = executor == null ? new SimpleLookupFactory(resolver, ForkJoinPool.commonPool()) :
+      LookupExecutor lookupExecutor = LookupExecutor.getInstance();
+
+      LookupFactory lookupFactory = executor == null ? new SimpleLookupFactory(resolver, lookupExecutor.executorService) :
               new SimpleLookupFactory(resolver, executor);
 
       if (cacheLookups) {

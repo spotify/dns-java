@@ -27,8 +27,9 @@ public interface DnsSrvResolver {
    * Does a DNS SRV lookup for the supplied fully qualified domain name, and returns the
    * matching results.
    * @deprecated
-   * This method is deprecated in favor of the asynchronous version.
-   * Use {@link DnsSrvResolver#resolveAsync(String)} instead
+   * This method is deprecated in favor of the asynchronous version and the implementation of this
+   * method has been changed to call resolveAsync.
+   * Use {@link DnsSrvResolver#resolveAsync(String)} directly instead.
    *
    * @param fqdn a DNS name to query for
    * @return a possibly empty list of matching records
