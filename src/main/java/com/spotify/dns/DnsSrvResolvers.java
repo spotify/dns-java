@@ -16,18 +16,24 @@
 
 package com.spotify.dns;
 
+import static java.util.Arrays.asList;
 import static java.util.concurrent.TimeUnit.HOURS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 import com.spotify.dns.statistics.DnsReporter;
 import java.net.UnknownHostException;
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ForkJoinPool;
 
+import java.util.stream.Collectors;
 import org.xbill.DNS.ExtendedResolver;
 import org.xbill.DNS.Resolver;
+import org.xbill.DNS.SimpleResolver;
+import sun.java2d.pipe.SpanShapeRenderer.Simple;
 
 /**
  * Provides builders for configuring and instantiating {@link DnsSrvResolver}s.
@@ -79,20 +85,31 @@ public final class DnsSrvResolvers {
     }
 
     public DnsSrvResolver build() {
+      final Duration timeoutDuration = Duration.ofMillis(dnsLookupTimeoutMillis);
       Resolver resolver;
       try {
         // If the user specified DNS servers, create a new ExtendedResolver which uses them.
         // Otherwise, use the default constructor. That will use the servers in ResolverConfig,
         // or if that's empty, localhost.
-        resolver = servers == null ?
-                   new ExtendedResolver() :
-                   new ExtendedResolver(servers.toArray(new String[0]));
+        List<Resolver> resolvers;
+        if (servers != null && !servers.isEmpty()) {
+          resolvers = new ArrayList<>(servers.size());
+          for (int i = 0; i < servers.size(); ++i) {
+            SimpleResolver res = new SimpleResolver(servers.get(i));
+            res.setTimeout(timeoutDuration);
+            resolvers.set(i, res);
+          }
+        } else {
+          SimpleResolver res = new SimpleResolver();
+          res.setTimeout(timeoutDuration);
+          resolvers = Collections.singletonList(res);
+        }
+        resolver = new ExtendedResolver(resolvers);
       } catch (UnknownHostException e) {
         throw new RuntimeException(e);
       }
 
       // Configure the Resolver to use our timeouts.
-      final Duration timeoutDuration = Duration.ofMillis(dnsLookupTimeoutMillis);
       resolver.setTimeout(timeoutDuration);
 
       LookupFactory lookupFactory = executor == null ? new SimpleLookupFactory(resolver, ForkJoinPool.commonPool()) :
