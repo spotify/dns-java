@@ -1,0 +1,8 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: dns-java
+spec:
+  type: library
+  owner: fabric
+
