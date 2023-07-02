@@ -31,7 +31,6 @@ public final class BasicUsage {
 
   public static void main(String[] args) throws IOException {
     DnsSrvResolver resolver = DnsSrvResolvers.newBuilder()
-        .cachingLookups(true)
         .retainingDataOnFailures(true)
         .metered(REPORTER)
         .dnsLookupTimeoutMillis(1000)
