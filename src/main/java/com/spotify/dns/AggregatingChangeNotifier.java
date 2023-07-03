@@ -76,11 +76,11 @@ class AggregatingChangeNotifier<T> extends AbstractChangeNotifier<T> {
       return ChangeNotifiers.initialEmptyDataInstance();
     }
 
-    ImmutableSet.Builder<T> records = ImmutableSet.builder();
+    ImmutableSet.Builder<T> recordsSet = ImmutableSet.builder();
     for (final ChangeNotifier<T> changeNotifier : changeNotifiers) {
-      records.addAll(changeNotifier.current());
+      recordsSet.addAll(changeNotifier.current());
     }
-    return records.build();
+    return recordsSet.build();
   }
 
   private boolean areAllInitial(List<ChangeNotifier<T>> changeNotifiers) {
