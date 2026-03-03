@@ -255,6 +255,7 @@
                 <configuration>
                     <!-- Open up module for reflective access from junit/mockito -->
                     <argLine>--add-opens com.spotify.dns/com.spotify.dns=ALL-UNNAMED</argLine>
+                	<forkCount>1.5C</forkCount>
                 </configuration>
             </plugin>
             <plugin>
